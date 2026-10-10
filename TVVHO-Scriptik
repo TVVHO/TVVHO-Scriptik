@@ -1,4 +1,4 @@
-local OrionLib = loadstring(game:HttpGet(('https://raw.githubusercontent.com/shlexware/Orion/main/source')))()
+local OrionLib = loadstring(game:HttpGet('https://raw.githubusercontent.com/jensonhirst/Orion/main/source'))()
 local Window = OrionLib:MakeWindow({Name = "TVVHO Hub", HidePremium = false, SaveConfig = true, ConfigFolder = "TVVHOCfg"})
 
 -- Вкладка Игрок
@@ -17,7 +17,9 @@ Tab1:AddSlider({
  Increment = 1,
  ValueName = "Speed",
  Callback = function(Value)
-  game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = Value
+  if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
+   game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = Value
+  end
  end    
 })
 
@@ -30,15 +32,19 @@ Tab1:AddSlider({
  Increment = 1,
  ValueName = "Jump",
  Callback = function(Value)
-  game.Players.LocalPlayer.Character.Humanoid.JumpPower = Value
+  if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
+   game.Players.LocalPlayer.Character.Humanoid.JumpPower = Value
+  end
  end    
 })
 
 Tab1:AddButton({
  Name = "Сбросить всё на стандарт",
  Callback = function()
-  game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = 16
-  game.Players.LocalPlayer.Character.Humanoid.JumpPower = 50
+  if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
+   game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = 16
+   game.Players.LocalPlayer.Character.Humanoid.JumpPower = 50
+  end
  end    
 })
 
