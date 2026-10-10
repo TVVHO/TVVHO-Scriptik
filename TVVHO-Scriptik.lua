@@ -47,15 +47,14 @@ end
 local ScreenGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
 ScreenGui.Name = "AetherPVP"
 ScreenGui.ResetOnSpawn = false
-ScreenGui.DisplayOrder = 999999 -- Чтобы было поверх всего
 
--- ПЛАВАЮЩАЯ КНОПКА (Вместо клавиш)
+-- ПЛАВАЮЩАЯ КНОПКА
 local WatermarkBtn = Instance.new("TextButton", ScreenGui)
 WatermarkBtn.Name = "OpenMenuBtn"
 WatermarkBtn.BackgroundColor3 = Color3.fromRGB(60, 0, 120)
 WatermarkBtn.BorderSizePixel = 0
 WatermarkBtn.Size = UDim2.new(0, 40, 0, 40)
-WatermarkBtn.Position = UDim2.new(0, 10, 1, -50) -- Левый нижний угол
+WatermarkBtn.Position = UDim2.new(0, 10, 1, -50)
 WatermarkBtn.Text = "M"
 WatermarkBtn.Font = Enum.Font.GothamBold
 WatermarkBtn.TextSize = 24
@@ -64,7 +63,7 @@ WatermarkBtn.AutoButtonColor = false
 local Corner = Instance.new("UICorner", WatermarkBtn)
 Corner.CornerRadius = UDim.new(0, 8)
 
--- Само Меню
+-- МЕНЮ (Просто Фрейм)
 local Main = Instance.new("Frame", ScreenGui)
 Main.Name = "Main"
 Main.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
@@ -72,7 +71,7 @@ Main.Position = UDim2.new(0.5, -130, 0.5, -150)
 Main.Size = UDim2.new(0, 260, 0, 350)
 Main.Active = true
 Main.Draggable = true
-Main.Visible = false -- Скрыто по умолчанию
+Main.Visible = false
 local MainCorner = Instance.new("UICorner", Main)
 MainCorner.CornerRadius = UDim.new(0, 12)
 local MainShadow = Instance.new("UIStroke", Main)
@@ -83,29 +82,22 @@ MainShadow.Thickness = 2
 local Title = Instance.new("TextLabel", Main)
 Title.BackgroundColor3 = Color3.fromRGB(60, 0, 120)
 Title.Size = UDim2.new(1, 0, 0, 35)
-Title.Text = "Aether PVP v5.0"
+Title.Text = "Aether PVP"
 Title.Font = Enum.Font.GothamBold
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextSize = 18
 
--- ВКЛАДКИ
-local TabButtons = {}
-local SelectedTab = "Combat"
-local TabBar = Instance.new("Frame", Main)
-TabBar.BackgroundTransparency = 1
-TabBar.Size = UDim2.new(1, 0, 0, 30)
-TabBar.Position = UDim2.new(0, 0, 0, 35)
-
+-- Контент (Список)
 local Content = Instance.new("ScrollingFrame", Main)
 Content.BackgroundTransparency = 1
-Content.Position = UDim2.new(0, 0, 0, 70)
-Content.Size = UDim2.new(1, 0, 1, -75)
+Content.Position = UDim2.new(0, 0, 0, 40)
+Content.Size = UDim2.new(1, 0, 1, -45)
 Content.CanvasSize = UDim2.new(0, 0, 0, 0)
 local ListLayout = Instance.new("UIListLayout", Content)
 ListLayout.Padding = UDim.new(0, 6)
 
--- Функция создания кнопок (та же)
-local function Btn2(text, func, flag)
+-- Функция создания кнопок (Упрощенная)
+local function Btn(text, func, flag)
     local button = Instance.new("TextButton", Content)
     button.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
     button.Size = UDim2.new(1, -10, 0, 35)
@@ -128,56 +120,29 @@ local function Btn2(text, func, flag)
     Check.AnchorPoint = Vector2.new(0.5, 0.5)
     local CheckCorner = Instance.new("UICorner", Check)
     CheckCorner.CornerRadius = UDim.new(0, 3)
+    
     button.MouseEnter:Connect(function() TweenService:Create(button, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(50, 50, 65)}):Play(); TweenService:Create(button, TweenInfo.new(0.15), {Size = UDim2.new(1.02, -10, 0, 37)}):Play() end)
     button.MouseLeave:Connect(function() TweenService:Create(button, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(40, 40, 50)}):Play(); TweenService:Create(button, TweenInfo.new(0.15), {Size = UDim2.new(1, -10, 0, 35)}):Play() end)
     button.MouseButton1Click:Connect(function() TweenService:Create(button, TweenInfo.new(0.05), {Size = UDim2.new(0.98, -10, 0, 33)}):Play(); wait(0.05); TweenService:Create(button, TweenInfo.new(0.05), {Size = UDim2.new(1, -10, 0, 35)}):Play(); func(); if flag then Check.BackgroundColor3 = (Flags[flag] and Color3.fromRGB(0, 255, 0)) or Color3.fromRGB(255, 0, 0) end end)
-end
-
--- Создание табов
-local function CreateTab(name)
-    local btn = Instance.new("TextButton", TabBar)
-    btn.BackgroundColor3 = (name == SelectedTab and Color3.fromRGB(60, 0, 120)) or Color3.fromRGB(40, 40, 50)
-    btn.Size = UDim2.new(0.33, 0, 1, 0)
-    btn.Position = UDim2.new((#TabButtons) * 0.33, 0, 0, 0)
-    btn.Text = name
-    btn.Font = Enum.Font.Gotham
-    btn.TextColor3 = Color3.fromRGB(220, 220, 255)
-    btn.TextSize = 12
-    btn.AutoButtonColor = false
-    local Corner = Instance.new("UICorner", btn)
-    Corner.CornerRadius = UDim.new(0, 6)
-    btn.MouseButton1Click:Connect(function()
-        SelectedTab = name
-        for _, v in pairs(TabButtons) do v.BackgroundColor3 = Color3.fromRGB(40, 40, 50) end
-        btn.BackgroundColor3 = Color3.fromRGB(60, 0, 120)
-        Content:ClearAllChildren()
-        ListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-            Content.CanvasSize = UDim2.new(0, 0, 0, ListLayout.AbsoluteContentSize.Y + 10)
-        end)
-        if name == "Combat" then
-            Btn2("Silent Aim", function() Flags.SilentAim = not Flags.SilentAim end, "SilentAim")
-            Btn2("Aim Part", function() Flags.AimPart = (Flags.AimPart == "Head" and "Body") or "Head" end)
-            Btn2("ESP", function() Flags.ESP = not Flags.ESP; for _,v in pairs(Players:GetPlayers()) do if v~=LocalPlayer and v.Character then if not v.Character:FindFirstChild("TVVHO_ESP") and Flags.ESP then local hl=Instance.new("Highlight",v.Character) hl.Name="TVVHO_ESP" hl.FillColor=Color3.fromRGB(255,0,0) hl.OutlineColor=Color3.fromRGB(255,255,255) hl.FillTransparency=0.7 elseif v.Character:FindFirstChild("TVVHO_ESP") and not Flags.ESP then v.Character:FindFirstChild("TVVHO_ESP"):Destroy() end end end end, "ESP")
-            Btn2("Hitbox", function() Flags.Hitbox = not Flags.Hitbox; for _,v in pairs(workspace:GetDescendants()) do if v.Name=="TVVHO_HITBOX" then v:Destroy() end end; if Flags.Hitbox then for _,v in pairs(Players:GetPlayers()) do if v~=LocalPlayer and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then local hb=Instance.new("Part",v.Character) hb.Name="TVVHO_HITBOX" hb.Shape=Enum.PartType.Ball hb.Size=Vector3.new(8,8,8) hb.Color=Color3.fromRGB(255,0,0) hb.Transparency=0.7 hb.CanCollide=false hb.Massless=true hb.Anchored=false local w=Instance.new("WeldConstraint",hb) w.Part0=hb w.Part1=v.Character.HumanoidRootPart end end end end, "Hitbox")
-            Btn2("TriggerBot", function() Flags.TriggerBot = not Flags.TriggerBot end, "TriggerBot")
-        elseif name == "World" then
-            Btn2("Speed", function() Flags.Speed = not Flags.Speed; if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then LocalPlayer.Character.Humanoid.WalkSpeed = Flags.Speed and 100 or 16 end end, "Speed")
-            Btn2("Jump Power", function() Flags.Jump = not Flags.Jump; if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then LocalPlayer.Character.Humanoid.JumpPower = Flags.Jump and 100 or 50 end end, "Jump")
-            Btn2("Gravity", function() Flags.Gravity = not Flags.Gravity; workspace.Gravity = Flags.Gravity and 100 or 196.2 end, "Gravity")
-            Btn2("FOV Circle", function() Flags.FOV_Circle = not Flags.FOV_Circle; if FOV_Circle then FOV_Circle.Visible = Flags.FOV_Circle end end, "FOV_Circle")
-            Btn2("AI Combat Bot", function() Flags.AI_Bot = not Flags.AI_Bot end, "AI_Bot")
-        elseif name == "Settings" then
-            Btn2("Close", function() Main.Visible = false; Blur.Visible = false end)
-        end
-        table.insert(TabButtons, btn)
+    
+    ListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        Content.CanvasSize = UDim2.new(0, 0, 0, ListLayout.AbsoluteContentSize.Y + 10)
     end)
 end
 
-CreateTab("Combat")
-CreateTab("World")
-CreateTab("Settings")
+-- КНОПКИ (Просто списком)
+Btn("Silent Aim", function() Flags.SilentAim = not Flags.SilentAim end, "SilentAim")
+Btn("Aim Part", function() Flags.AimPart = (Flags.AimPart == "Head" and "Body") or "Head" end)
+Btn("ESP", function() Flags.ESP = not Flags.ESP; for _,v in pairs(Players:GetPlayers()) do if v~=LocalPlayer and v.Character then if not v.Character:FindFirstChild("TVVHO_ESP") and Flags.ESP then local hl=Instance.new("Highlight",v.Character) hl.Name="TVVHO_ESP" hl.FillColor=Color3.fromRGB(255,0,0) hl.OutlineColor=Color3.fromRGB(255,255,255) hl.FillTransparency=0.7 elseif v.Character:FindFirstChild("TVVHO_ESP") and not Flags.ESP then v.Character:FindFirstChild("TVVHO_ESP"):Destroy() end end end end, "ESP")
+Btn("Hitbox", function() Flags.Hitbox = not Flags.Hitbox; for _,v in pairs(workspace:GetDescendants()) do if v.Name=="TVVHO_HITBOX" then v:Destroy() end end; if Flags.Hitbox then for _,v in pairs(Players:GetPlayers()) do if v~=LocalPlayer and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then local hb=Instance.new("Part",v.Character) hb.Name="TVVHO_HITBOX" hb.Shape=Enum.PartType.Ball hb.Size=Vector3.new(8,8,8) hb.Color=Color3.fromRGB(255,0,0) hb.Transparency=0.7 hb.CanCollide=false hb.Massless=true hb.Anchored=false local w=Instance.new("WeldConstraint",hb) w.Part0=hb w.Part1=v.Character.HumanoidRootPart end end end end, "Hitbox")
+Btn("TriggerBot", function() Flags.TriggerBot = not Flags.TriggerBot end, "TriggerBot")
+Btn("Speed", function() Flags.Speed = not Flags.Speed; if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then LocalPlayer.Character.Humanoid.WalkSpeed = Flags.Speed and 100 or 16 end end, "Speed")
+Btn("Jump Power", function() Flags.Jump = not Flags.Jump; if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then LocalPlayer.Character.Humanoid.JumpPower = Flags.Jump and 100 or 50 end end, "Jump")
+Btn("Gravity", function() Flags.Gravity = not Flags.Gravity; workspace.Gravity = Flags.Gravity and 100 or 196.2 end, "Gravity")
+Btn("FOV Circle", function() Flags.FOV_Circle = not Flags.FOV_Circle; if FOV_Circle then FOV_Circle.Visible = Flags.FOV_Circle end end, "FOV_Circle")
+Btn("AI Combat Bot", function() Flags.AI_Bot = not Flags.AI_Bot end, "AI_Bot")
 
--- Кнопка закрытия
+-- Кнопка закрытия (Крестик)
 local Close = Instance.new("TextButton", Main)
 Close.BackgroundTransparency = 1
 Close.Position = UDim2.new(1, -25, 0, 5)
@@ -189,14 +154,13 @@ Close.TextSize = 16
 Close.AutoButtonColor = false
 Close.MouseButton1Click:Connect(function() Main.Visible = false; Blur.Visible = false end)
 
--- ЛОГИКА КНОПКИ (Нажал на "M" в углу -> открылось меню)
+-- ОТКРЫТИЕ МЕНЮ
 WatermarkBtn.MouseButton1Click:Connect(function()
     Main.Visible = not Main.Visible
     Blur.Visible = Main.Visible
 end)
 
--- === ЦИКЛЫ ЛОГИКИ (Silent Aim, TriggerBot, AI Bot - остаются как в прошлом коде) ===
-
+-- ЛОГИКА (Silent Aim, TriggerBot, AI Bot - остаются как в прошлом коде)
 -- 1. Silent Aim
 RunService.Heartbeat:Connect(function()
     if Flags.SilentAim and UserInputService:IsKeyDown(Enum.KeyCode_L) then
@@ -294,4 +258,4 @@ RunService:BindToRenderStep("UpdateFOV", Enum.RenderPriority.Camera.Value - 1, f
     end
 end)
 
-print("Aether PVP v5.2 Loaded. [Кнопка 'M' в углу слева внизу]")
+print("Aether PVP LITE Loaded. [Кнопка 'M' в углу]")
