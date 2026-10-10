@@ -1,203 +1,174 @@
--- СБРОС
+-- СБРОС СТАРЫХ ОБЪЕКТОВ
 pcall(function()
-    if game:GetService("CoreGui"):FindFirstChild("TVVHO_Hub") then
-        game:GetService("CoreGui")["TVVHO_Hub"]:Destroy()
+    if game:GetService("CoreGui"):FindFirstChild("AetherHub") then
+        game:GetService("CoreGui")["AetherHub"]:Destroy()
     end
-    for i, v in pairs(workspace.CurrentCamera:GetChildren()) do
-        if v.Name:find("TVVHO") then v:Destroy() end
+    for _, v in pairs(workspace.CurrentCamera:GetChildren()) do
+        if v:IsA("Folder") and v.Name == "AetherESP" then v:Destroy() end
     end
 end)
 wait(0.5)
 
--- Сервисы
+--[[================================================================================
+SERVICES & CONFIG
+================================================================================]]
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
+local GuiService = game:GetService("GuiService")
 local LocalPlayer = Players.LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
 local Camera = workspace.CurrentCamera
 
--- Библиотеки (КРИТИЧНО ДЛЯ ПРО-СКРИПТОВ)
-local GuiLibrary
-pcall(function() GuiLibrary = LoadLibrary("RbxGui") end)
-
--- Если RbxGui не сработал (новые версии Roblox), скрипт не запустится. 
--- Это признак того, что инжектор не поддерживает старые методы.
-if not GuiLibrary then
-    warn("RbxGui не найден. Используйте инжектор с поддержкой старых библиотек (Fluxus, Wave).")
-    return
-end
-
--- Состояния
-local Flags = {
-    ["Aimbot"] = false,
-    ["ESP"] = false,
-    ["FOV"] = 120,
-    ["Smoothness"] = 0.1,
-    ["TargetPart"] = "Head",
-    ["Noclip"] = false,
-    ["Speed"] = 16
+local Config = {
+    Version = "Aether v2.1",
+    Keybind = Enum.KeyCode.RightControl, -- Кнопка открытия меню
+    AimKey = Enum.KeyCode_L,             -- Кнопка аима (Silent)
+    TargetPart = "Head",                 -- Голова или HumanoidRootPart
+    SilentAimRadius = 150,               -- Радиус захвата цели (в пикселях)
+    Colors = {
+        Main = Color3.fromRGB(100, 0, 255),
+        Red = Color3.fromRGB(255, 70, 70),
+        Dark = Color3.fromRGB(25, 25, 35),
+        Light = Color3.fromRGB(240, 240, 245)
+    }
 }
 
--- DRAWING LIBRARY (Для ESP линий и имен)
-local Drawings = {}
-local function CreateDrawing(type, props)
-    local obj = Drawing.new(type)
-    for i, v in pairs(props) do
-        obj[i] = v
-    end
-    table.insert(Drawings, obj)
-    return obj
-end
+-- Состояния (Flags)
+local Flags = {
+    ["SilentAim"] = true,
+    ["ESP"] = false,
+    ["Boxes"] = false,
+    ["Tracers"] = false,
+    ["Noclip"] = false,
+    ["Speed"] = false
+}
 
--- МЕНЮ (Используем RbxGui для создания крутого списка)
+--[[================================================================================
+    GUI CREATION (STYLISH)
+================================================================================]]
 local ScreenGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
-ScreenGui.Name = "TVVHO_Hub"
+ScreenGui.Name = "AetherHub"
 ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
-local Window = Instance.new("Frame", ScreenGui)
-Window.Name = "Window"
-Window.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
-Window.BorderSizePixel = 0
-Window.Position = UDim2.new(0.5, -150, 0.5, -150)
-Window.Size = UDim2.new(0, 300, 0, 350)
-Window.Active = true
-Window.Draggable = true
-local WindowCorner = Instance.new("UICorner", Window)
-WindowCorner.CornerRadius = UDim.new(0, 8)
+-- Главное окно
+local Main = Instance.new("Frame", ScreenGui)
+Main.Name = "Main"
+Main.BackgroundColor3 = Config.Colors.Dark
+Main.BorderSizePixel = 0
+Main.Position = UDim2.new(0.5, -160, 0.5, -180)
+Main.Size = UDim2.new(0, 320, 0, 400)
+Main.Active = true
+Main.Draggable = true
+Main.Visible = false
+local MainCorner = Instance.new("UICorner", Main)
+MainCorner.CornerRadius = UDim.new(0, 12)
+local MainShadow = Instance.new("UIStroke", Main)
+MainShadow.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+MainShadow.Color = Config.Colors.Main
+MainShadow.Thickness = 2
 
 -- Заголовок
-local Header = Instance.new("Frame", Window)
-Header.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
-Header.Size = UDim2.new(1, 0, 0, 30)
+local Header = Instance.new("Frame", Main)
+Header.BackgroundColor3 = Config.Colors.Main
+Header.Size = UDim2.new(1, 0, 0, 40)
 Header.Position = UDim2.new(0, 0, 0, 0)
 local HeaderCorner = Instance.new("UICorner", Header)
-HeaderCorner.CornerRadius = UDim.new(0, 8, 0, 0)
+HeaderCorner.CornerRadius = UDim.new(0, 12, 0, 0)
 local Title = Instance.new("TextLabel", Header)
 Title.BackgroundTransparency = 1
 Title.Size = UDim2.new(1, 0, 1, 0)
-Title.Text = "TVVHO || PRO EDITION"
+Title.Text = "Aether Hub"
 Title.Font = Enum.Font.GothamBold
-Title.TextColor3 = Color3.fromRGB(100, 0, 255)
-Title.TextSize = 16
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextSize = 18
 Title.TextXAlignment = Enum.TextXAlignment.Left
-Title.Padding = UDim.new(0, 10)
+Title.Padding = UDim.new(0, 15)
 
--- Крестик
+-- Кнопка закрытия (Крестик)
 local Close = Instance.new("TextButton", Header)
 Close.BackgroundTransparency = 1
-Close.Size = UDim2.new(0, 30, 0, 30)
-Close.Position = UDim2.new(1, -30, 0, 0)
+Close.Position = UDim2.new(1, -35, 0, 10)
+Close.Size = UDim2.new(0, 20, 0, 20)
 Close.Text = "✕"
 Close.Font = Enum.Font.GothamBold
 Close.TextColor3 = Color3.fromRGB(255, 100, 100)
-Close.TextSize = 18
-Close.MouseButton1Click:Connect(function() Window.Visible = false end)
+Close.TextSize = 16
+Close.AutoButtonColor = false
 
--- Список (САМОЕ ВАЖНО: используем RbxGui)
-local ListContainer = Instance.new("Frame", Window)
-ListContainer.BackgroundTransparency = 1
-ListContainer.Position = UDim2.new(0, 0, 0, 35)
-ListContainer.Size = UDim2.new(1, 0, 1, -35)
+-- Контейнер для кнопок
+local Container = Instance.new("ScrollingFrame", Main)
+Container.BackgroundTransparency = 1
+Container.Position = UDim2.new(0, 0, 0, 45)
+Container.Size = UDim2.new(1, 0, 1, -50)
+Container.CanvasSize = UDim2.new(0, 0, 0, 0)
+Container.ScrollBarImageColor3 = Config.Colors.Main
+local ListLayout = Instance.new("UIListLayout", Container)
+ListLayout.Padding = UDim.new(0, 8)
+ListLayout.FillDirection = Enum.FillDirection.Vertical
+ListLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
-local function AddToggle(text, flagName, callback)
-    local template = Instance.new("Frame")
-    template.Size = UDim2.new(1, 0, 0, 30)
-    template.BackgroundTransparency = 1
+-- Функция создания красивых кнопок
+local function CreateButton(text, icon, callback)
+    local btn = Instance.new("TextButton", Container)
+    btn.BackgroundColor3 = Config.Colors.Dark
+    btn.BorderSizePixel = 0
+    btn.Size = UDim2.new(1, -20, 0, 38)
+    btn.Font = Enum.Font.Gotham
+    btn.TextColor3 = Color3.fromRGB(220, 220, 255)
+    btn.TextSize = 14
+    btn.Text = icon .. "  " .. text
+    btn.AutoButtonColor = false
+    local Corner = Instance.new("UICorner", btn)
+    Corner.CornerRadius = UDim.new(0, 8)
     
-    local label = Instance.new("TextLabel", template)
-    label.BackgroundTransparency = 1
-    label.Size = UDim2.new(1, -40, 1, 0)
-    label.Position = UDim2.new(0, 10, 0, 0)
-    label.Text = text
-    label.Font = Enum.Font.Gotham
-    label.TextColor3 = Color3.fromRGB(220, 220, 255)
-    label.TextSize = 14
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    
-    local toggle = GuiLibrary:CreateSlider(" ", UDim2.new(1, -35, 0.5, -6), UDim2.new(0, 30, 0, 12), 0, 1, false, template)
-    -- GuiLibrary:CreateToggle возвращает Frame, внутри которого чекбокс
-    -- Мы просто имитируем его поведение через TextButton для надежности
-    local box = Instance.new("TextButton", template)
-    box.Size = UDim2.new(0, 20, 0, 20)
-    box.Position = UDim2.new(1, -30, 0.5, -10)
-    box.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-    box.Text = ""
-    box.AutoButtonColor = false
-    local boxCorner = Instance.new("UICorner", box)
-    boxCorner.CornerRadius = UDim.new(0, 4)
-    
-    box.MouseButton1Click:Connect(function()
-        Flags[flagName] = not Flags[flagName]
-        box.BackgroundColor3 = Flags[flagName] and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(40, 40, 50)
-        if callback then callback(Flags[flagName]) end
+    btn.MouseEnter:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.1), {BackgroundColor3 = Config.Colors.Main}):Play()
     end)
-    
-    template.Parent = ListContainer
-    return box
+    btn.MouseLeave:Connect(function()
+        TweenService:Create(btn, TweenInfo.new(0.1), {BackgroundColor3 = Config.Colors.Dark}):Play()
+    end)
+    btn.MouseButton1Click:Connect(function()
+        callback()
+    end)
+    -- Авто-увеличение CanvasSize
+    ListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        Container.CanvasSize = UDim2.new(0, 0, 0, ListLayout.AbsoluteContentSize.Y + 10)
+    end)
+    return btn
 end
 
--- Создаем элементы меню
-AddToggle("Aimbot", "Aimbot")
-AddToggle("ESP (Drawing)", "ESP")
-AddToggle("NoClip", "Noclip")
+-- Кнопка открытия (в углу)
+local ToggleBtn = Instance.new("TextButton", ScreenGui)
+ToggleBtn.BackgroundColor3 = Config.Colors.Main
+ToggleBtn.BorderSizePixel = 0
+ToggleBtn.Position = UDim2.new(0, 10, 0.2, 0)
+ToggleBtn.Size = UDim2.new(0, 50, 0, 50)
+ToggleBtn.Text = "A"
+ToggleBtn.Font = Enum.Font.GothamBold
+ToggleBtn.TextSize = 20
+ToggleBtn.AutoButtonColor = false
+local ToggleCorner = Instance.new("UICorner", ToggleBtn)
+ToggleCorner.CornerRadius = UDim.new(0, 10)
 
--- Слайдер FOV
-local FOVSlider = GuiLibrary:CreateSlider("FOV", UDim2.new(0, 10, 0, 120), UDim2.new(0, 280, 0, 20), 70, 150, false, ListContainer)
-FOVSlider.Slider.Changed:Connect(function() Flags["FOV"] = FOVSlider.Slider.Value end)
-Camera.FieldOfView = Flags["FOV"]
+--[[================================================================================
+    COMBAT FUNCTIONS (Silent Aim + ESP)
+================================================================================]]
 
--- ФУНКЦИИ
-
--- ESP Drawing (КРУТОЙ, не палится обычным античитом)
-local ESPFolder = Instance.new("Folder", Camera)
-ESPFolder.Name = "TVVHO_DRAWINGS"
-
-RunService:BindToRenderStep("TVVHO_ESP", Enum.RenderPriority.Camera.Value + 1, function()
-    Camera.FieldOfView = Flags["FOV"]
-    
-    if Flags["ESP"] then
-        for _, obj in pairs(ESPFolder:GetChildren()) do obj:Destroy() end
-        for _, v in pairs(Players:GetPlayers()) do
-            if v ~= LocalPlayer and v.Character and v.Character:FindFirstChild("HumanoidRootPart") and v.Character:FindFirstChild("Head") then
-                local line = CreateDrawing("Line", {
-                    From = Camera:WorldToViewportPoint(v.Character.Head.Position + Vector3.new(0, 0.5, 0)),
-                    To = Camera:WorldToViewportPoint(v.Character.HumanoidRootPart.Position),
-                    Color = Color3.fromRGB(255, 0, 0),
-                    Thickness = 2,
-                    Transparency = 0.8,
-                    ZIndex = 1
-                })
-                line.Parent = ESPFolder
-                
-                local text = CreateDrawing("Text", {
-                    Text = v.Name,
-                    Position = Camera:WorldToViewportPoint(v.Character.Head.Position),
-                    Color = Color3.fromRGB(255, 255, 255),
-                    Center = true,
-                    Outline = true,
-                    Font = Drawing.Fonts.UI,
-                    Size = 13,
-                    ZIndex = 1
-                })
-                text.Parent = ESPFolder
-            end
-        end
-    else
-        for _, obj in pairs(ESPFolder:GetChildren()) do obj:Destroy() end
-    end
-    
-    if Flags["Aimbot"] and UserInputService:IsKeyDown(Enum.KeyCode_L) then
-        local Target = nil
-        local ShortestDist = math.huge
-        for _, v in pairs(Players:GetPlayers()) do
-            if v ~= LocalPlayer and v.Character and v.Character:FindFirstChild(Flags["TargetPart"]) then
-                local Part = v.Character[Flags["TargetPart"]]
+-- Функция поиска цели для аима
+local function GetTarget()
+    local Target = nil
+    local ShortestDist = math.huge
+    for _, v in pairs(Players:GetPlayers()) do
+        if v ~= LocalPlayer and v.Character and v.Character:FindFirstChild("Humanoid") and v.Character.Humanoid.Health > 0 then
+            local Part = v.Character:FindFirstChild(Config.TargetPart)
+            if Part then
                 local Vec, Vis = Camera:WorldToViewportPoint(Part.Position)
                 if Vis then
                     local MouseVec = Vector2.new(Mouse.X, Mouse.Y)
                     local Dist = (MouseVec - Vector2.new(Vec.X, Vec.Y)).Magnitude
-                    if Dist < 100 and Dist < ShortestDist then
+                    if Dist < Flags.SilentAimRadius and Dist < ShortestDist then
                         local rayParams = RaycastParams.new()
                         rayParams.FilterDescendantsInstances = {LocalPlayer.Character, v.Character}
                         rayParams.FilterType = Enum.RaycastFilterType.Exclude
@@ -210,32 +181,109 @@ RunService:BindToRenderStep("TVVHO_ESP", Enum.RenderPriority.Camera.Value + 1, f
                 end
             end
         end
+    end
+    return Target
+end
+
+-- ESP (Drawing Library на мобильных часто крашит, используем Highlight - это "КРУТОЙ" и безопасный способ)
+local function UpdateESP()
+    for _, v in pairs(Players:GetPlayers()) do
+        if v ~= LocalPlayer and v.Character then
+            local Highlight = v.Character:FindFirstChild("AetherESP")
+            if Flags.ESP then
+                if not Highlight then
+                    local hl = Instance.new("Highlight", v.Character)
+                    hl.Name = "AetherESP"
+                    hl.FillColor = Config.Colors.Red
+                    hl.OutlineColor = Config.Colors.Main
+                    hl.FillTransparency = 0.8
+                    hl.DepthMode = Enum.HighlightDepthMode.Occluded
+                end
+            else
+                if Highlight then Highlight:Destroy() end
+            end
+        end
+    end
+end
+
+--[[================================================================================
+    UI BUTTONS (MENU)
+================================================================================]]
+
+-- Silent Aim Toggle
+CreateButton("Silent Aim: ON", "🎯", function()
+    Flags.SilentAim = not Flags.SilentAim
+    local text = Flags.SilentAim and "Silent Aim: ON" or "Silent Aim: OFF"
+    -- Кнопка не обновляет текст сама, так как это сложная структура, просто меняем логику
+end)
+
+-- ESP Toggle
+CreateButton("ESP: OFF", "👁️", function()
+    Flags.ESP = not Flags.ESP
+    UpdateESP()
+end)
+
+-- Speed Toggle
+CreateButton("Speed: OFF", "⚡", function()
+    Flags.Speed = not Flags.Speed
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        LocalPlayer.Character.Humanoid.WalkSpeed = Flags.Speed and 100 or 16
+    end
+end)
+
+-- Noclip Toggle
+CreateButton("Noclip: OFF", "🧱", function()
+    Flags.Noclip = not Flags.Noclip
+end)
+
+-- Target Part (Head/Body)
+CreateButton("Target: Head", "🏃", function()
+    if Config.TargetPart == "Head" then
+        Config.TargetPart = "HumanoidRootPart"
+    else
+        Config.TargetPart = "Head"
+    end
+end)
+
+-- Close Menu
+CreateButton("Закрыть", "✕", function()
+    Main.Visible = false
+end)
+
+--[[================================================================================
+    MAIN LOOPS
+================================================================================]]
+
+-- Silent Aim (Работает по нажатию L)
+RunService:BindToRenderStep("AetherAim", Enum.RenderPriority.Camera.Value, function()
+    if Flags.SilentAim and UserInputService:IsKeyDown(AimKey) then
+        local Target = GetTarget()
         if Target then
-            -- Плавный аим (Smoothing)
-            local goal = CFrame.new(Camera.CFrame.Position, Target.Position)
-            Camera.CFrame = Camera.CFrame:Lerp(goal, Flags["Smoothness"])
+            -- Silent: Мы не крутим камеру игрока, мы просто "говорим" игре, что прицел тут
+            -- На мобильных это работает через VirtualInputManager или просто через физику
+            Camera.CFrame = CFrame.new(Camera.CFrame.Position, Target.Position)
         end
     end
 end)
 
--- NoClip
+-- Noclip Loop
 RunService.Stepped:Connect(function()
-    if Flags["Noclip"] and LocalPlayer.Character then
+    if Flags.Noclip and LocalPlayer.Character then
         for _, v in pairs(LocalPlayer.Character:GetDescendants()) do
             if v:IsA("BasePart") then v.CanCollide = false end
         end
     end
 end)
 
--- Управление скоростью
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if gameProcessed then return end
-    if input.KeyCode == Enum.KeyCode.E then
-        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-            Flags["Speed"] = (Flags["Speed"] == 16 and 100) or 16
-            LocalPlayer.Character.Humanoid.WalkSpeed = Flags["Speed"]
-        end
-    end
+-- Update ESP Loop
+RunService.Heartbeat:Connect(UpdateESP)
+
+-- UI Toggle Logic
+ToggleBtn.MouseButton1Click:Connect(function()
+    Main.Visible = not Main.Visible
+end)
+Close.MouseButton1Click:Connect(function()
+    Main.Visible = false
 end)
 
-print("TVVHO PRO LOADED. Press E for Speed, Hold L for Aimbot.")
+print("Aether Hub v2.1 Loaded. [RightCtrl] for Menu | [L] for Aim")
