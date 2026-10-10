@@ -109,4 +109,4 @@ CreateButton("Сбросить всё", function()
         game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = 16
         game.Players.LocalPlayer.Character.Humanoid.JumpPower = 50
     end
-end
+end)
