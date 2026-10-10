@@ -1,4 +1,3 @@
-```lua
 -- Создаем главный интерфейс TVVHO Hub
 local ScreenGui = Instance.new("ScreenGui")
 local Main = Instance.new("Frame")
@@ -110,5 +109,4 @@ CreateButton("Сбросить всё", function()
         game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = 16
         game.Players.LocalPlayer.Character.Humanoid.JumpPower = 50
     end
-end)
-```
+end
