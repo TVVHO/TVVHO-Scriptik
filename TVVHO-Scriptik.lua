@@ -19,21 +19,23 @@ local TweenService = game:GetService("TweenService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
--- НАСТРОЙКИ (FOV Circle)
-local FOV_Settings = {
-    ["Radius"] = 150, -- Радиус круга (чем больше, тем дальше аим цепляет)
-    ["Color"] = Color3.fromRGB(100, 0, 255),
-    ["Transparency"] = 0.6,
-    ["Thickness"] = 2,
-    ["NumSides"] = 100 -- Плавность круга
+-- НАСТРОЙКИ ХИТБОКСА
+local Hitbox_Settings = {
+    ["Size"] = 8, -- Размер хитбокса (6-10 оптимально)
+    ["Color"] = Color3.fromRGB(255, 0, 0),
+    ["Transparency"] = 0.7,
+    ["Enabled"] = false
 }
+
+local Hitbox_Connections = {} -- Для очистки
 
 -- Состояния
 local Flags = {
     ["SilentAim"] = true,
     ["ESP"] = false,
     ["Speed"] = false,
-    ["FOV_Circle"] = true -- Вкл/Выкл самого круга
+    ["FOV_Circle"] = true,
+    ["Hitbox"] = false -- Состояние кнопки
 }
 
 -- FOV Circle Object
@@ -41,11 +43,11 @@ local FOV_Circle
 if DrawingLib then
     FOV_Circle = DrawingLib:Create('Circle', {
         Visible = Flags["FOV_Circle"],
-        Color = FOV_Settings.Color,
-        Transparency = FOV_Settings.Transparency,
-        Thickness = FOV_Settings.Thickness,
-        NumSides = FOV_Settings.NumSides,
-        Radius = FOV_Settings.Radius,
+        Color = Color3.fromRGB(100, 0, 255),
+        Transparency = 0.6,
+        Thickness = 2,
+        NumSides = 100,
+        Radius = 150,
         Filled = false,
         Position = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
     })
@@ -206,7 +208,70 @@ Btn("Silent Aim", function()
 end, "SilentAim")
 y = y + 45
 
--- Кнопка круга FOV
+-- КНОПКА ХИТБОКСА (EXPANDER)
+Btn("Hitbox Expander", function()
+    Flags.Hitbox = not Flags.Hitbox
+    
+    -- Очистка старых хитбоксов
+    for _, conn in pairs(Hitbox_Connections) do
+        if conn then conn:Disconnect() end
+    end
+    table.clear(Hitbox_Connections)
+    
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v.Name == "TVVHO_HITBOX" then v:Destroy() end
+    end
+    
+    if Flags.Hitbox then
+        -- Функция создания хитбокса
+        local function CreateHitbox(char)
+            if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+            local hb = Instance.new("Part", char)
+            hb.Name = "TVVHO_HITBOX"
+            hb.Shape = Enum.PartType.Ball
+            hb.Size = Vector3.new(Hitbox_Settings.Size, Hitbox_Settings.Size, Hitbox_Settings.Size)
+            hb.Color = Hitbox_Settings.Color
+            hb.Transparency = Hitbox_Settings.Transparency
+            hb.CanCollide = false
+            hb.Massless = true
+            hb.Anchored = false
+            hb.Name = "TVVHO_HITBOX"
+            
+            local weld = Instance.new("WeldConstraint", hb)
+            weld.Part0 = hb
+            weld.Part1 = char.HumanoidRootPart
+        end
+        
+        -- Создаем для существующих
+        for _, v in pairs(Players:GetPlayers()) do
+            if v ~= LocalPlayer and v.Character then
+                CreateHitbox(v.Character)
+            end
+        end
+        
+        -- Слушаем появление новых игроков
+        Hitbox_Connections["PlayerAdded"] = Players.PlayerAdded:Connect(function(plr)
+            Hitbox_Connections["CharAdded_" .. plr.Name] = plr.CharacterAdded:Connect(function(char)
+                wait(0.5)
+                CreateHitbox(char)
+            end)
+        end)
+        
+        -- Удаляем при выходе
+        Hitbox_Connections["PlayerRemoving"] = Players.PlayerRemoving:Connect(function(plr)
+            if Hitbox_Connections["CharAdded_" .. plr.Name] then
+                Hitbox_Connections["CharAdded_" .. plr.Name]:Disconnect()
+            end
+            if plr.Character then
+                for _, v in pairs(plr.Character:GetDescendants()) do
+                    if v.Name == "TVVHO_HITBOX" then v:Destroy() end
+                end
+            end
+        end)
+    end
+end, "Hitbox")
+y = y + 45
+
 Btn("FOV Circle", function()
     Flags.FOV_Circle = not Flags.FOV_Circle
     if FOV_Circle then
@@ -220,24 +285,25 @@ Btn("Сбросить", function()
     Flags.SilentAim = true
     Flags.ESP = false
     Flags.FOV_Circle = true
+    Flags.Hitbox = false
+    
     if FOV_Circle then FOV_Circle.Visible = true end
+    
+    -- Очистка хитбоксов при сбросе
+    for _, conn in pairs(Hitbox_Connections) do
+        if conn then conn:Disconnect() end
+    end
+    table.clear(Hitbox_Connections)
+    for _, v in pairs(workspace:GetDescendants()) do
+        if v.Name == "TVVHO_HITBOX" then v:Destroy() end
+    end
+    
     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
         LocalPlayer.Character.Humanoid.WalkSpeed = 16
         LocalPlayer.Character.Humanoid.JumpPower = 50
     end
     for _, v in pairs(workspace:GetDescendants()) do
         if v:IsA("Highlight") and v.Name == "TVVHO_ESP" then v:Destroy() end
-    end
-    for _, v in pairs(Main:GetChildren()) do
-        if v:IsA("TextButton") then
-            local check = v:FindFirstChildWhichIsA("Frame")
-            if check then
-                local name = v.Text:match("(.+)%s")
-                if name and Flags[name] then
-                    check.BackgroundColor3 = (Flags[name] and Color3.fromRGB(0, 255, 0)) or Color3.fromRGB(255, 0, 0)
-                end
-            end
-        end
     end
 end)
 
@@ -277,7 +343,7 @@ RunService.Heartbeat:Connect(function()
                     if Vis then
                         local MouseVec = Vector2.new(Mouse.X, Mouse.Y)
                         local Dist = (MouseVec - Vector2.new(Vec.X, Vec.Y)).Magnitude
-                        if Dist < FOV_Settings.Radius and Dist < Shortest then
+                        if Dist < 150 and Dist < Shortest then
                             local rayParams = RaycastParams.new()
                             rayParams.FilterDescendantsInstances = {LocalPlayer.Character, v.Character}
                             rayParams.FilterType = Enum.RaycastFilterType.Exclude
@@ -297,12 +363,11 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
--- Обновление позиции круга (чтобы он был всегда по центру)
+-- Обновление позиции круга
 RunService:BindToRenderStep("UpdateFOV", Enum.RenderPriority.Camera.Value - 1, function()
     if FOV_Circle and Flags.FOV_Circle then
         FOV_Circle.Position = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
-        FOV_Circle.Radius = FOV_Settings.Radius
     end
 end)
 
-print("Aether Glass v3.0 Loaded. [M] for Menu | [L] for Aim")
+print("Aether Glass v4.0 Loaded. [M] for Menu | [L] for Aim | Hitbox ON = God Mode") 
