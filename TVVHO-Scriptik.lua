@@ -6,18 +6,50 @@ pcall(function()
 end)
 wait(0.5)
 
+-- Библиотека рисования (для круга FOV)
+local DrawingLib
+pcall(function()
+    DrawingLib = loadstring(game:HttpGet("https://kiriot22.com/releases/drawing-lib.lua"))()
+end)
+
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+-- НАСТРОЙКИ (FOV Circle)
+local FOV_Settings = {
+    ["Radius"] = 150, -- Радиус круга (чем больше, тем дальше аим цепляет)
+    ["Color"] = Color3.fromRGB(100, 0, 255),
+    ["Transparency"] = 0.6,
+    ["Thickness"] = 2,
+    ["NumSides"] = 100 -- Плавность круга
+}
 
 -- Состояния
 local Flags = {
     ["SilentAim"] = true,
     ["ESP"] = false,
-    ["Speed"] = false
+    ["Speed"] = false,
+    ["FOV_Circle"] = true -- Вкл/Выкл самого круга
 }
+
+-- FOV Circle Object
+local FOV_Circle
+if DrawingLib then
+    FOV_Circle = DrawingLib:Create('Circle', {
+        Visible = Flags["FOV_Circle"],
+        Color = FOV_Settings.Color,
+        Transparency = FOV_Settings.Transparency,
+        Thickness = FOV_Settings.Thickness,
+        NumSides = FOV_Settings.NumSides,
+        Radius = FOV_Settings.Radius,
+        Filled = false,
+        Position = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+    })
+end
 
 -- Создаем GUI
 local ScreenGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
@@ -83,8 +115,8 @@ ToggleShadow.Thickness = 2
 local List = Instance.new("UIListLayout", Main)
 List.Padding = UDim.new(0, 8)
 
--- Функция кнопок (С эффектами!)
-local function Btn(text, func)
+-- Функция кнопок
+local function Btn(text, func, flag)
     local button = Instance.new("TextButton", Main)
     button.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
     button.Position = UDim2.new(0.05, 0, 0, 0)
@@ -102,7 +134,15 @@ local function Btn(text, func)
     BtnShadow.Thickness = 1
     BtnShadow.Transparency = 0.7
 
-    -- ЭФФЕКТЫ НАВЕДЕНИЯ (Tween)
+    -- Чекбокс
+    local Check = Instance.new("Frame", button)
+    Check.BackgroundColor3 = (flag and Flags[flag] and Color3.fromRGB(0, 255, 0)) or Color3.fromRGB(255, 0, 0)
+    Check.Position = UDim2.new(0.85, 0, 0.5, 0)
+    Check.Size = UDim2.new(0, 12, 0, 12)
+    Check.AnchorPoint = Vector2.new(0.5, 0.5)
+    local CheckCorner = Instance.new("UICorner", Check)
+    CheckCorner.CornerRadius = UDim.new(0, 3)
+
     button.MouseEnter:Connect(function()
         TweenService:Create(button, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(50, 50, 65)}):Play()
         TweenService:Create(button, TweenInfo.new(0.15), {Size = UDim2.new(0.92, 0, 0, 37)}):Play()
@@ -116,6 +156,9 @@ local function Btn(text, func)
         wait(0.05)
         TweenService:Create(button, TweenInfo.new(0.05), {Size = UDim2.new(0.9, 0, 0, 35)}):Play()
         func()
+        if flag then
+            Check.BackgroundColor3 = (Flags[flag] and Color3.fromRGB(0, 255, 0)) or Color3.fromRGB(255, 0, 0)
+        end
     end)
     
     List:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
@@ -130,7 +173,7 @@ Btn("Скорость (100)", function()
     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
         LocalPlayer.Character.Humanoid.WalkSpeed = Flags.Speed and 100 or 16
     end
-end)
+end, "Speed")
 y = y + 45
 
 Btn("Прыжок (100)", function()
@@ -155,22 +198,46 @@ Btn("ВХ (ESP)", function()
             end
         end
     end
-end)
+end, "ESP")
 y = y + 45
 
-Btn("Silent Aim: ON", function()
+Btn("Silent Aim", function()
     Flags.SilentAim = not Flags.SilentAim
-end)
+end, "SilentAim")
+y = y + 45
+
+-- Кнопка круга FOV
+Btn("FOV Circle", function()
+    Flags.FOV_Circle = not Flags.FOV_Circle
+    if FOV_Circle then
+        FOV_Circle.Visible = Flags.FOV_Circle
+    end
+end, "FOV_Circle")
 y = y + 45
 
 Btn("Сбросить", function()
     Flags.Speed = false
+    Flags.SilentAim = true
+    Flags.ESP = false
+    Flags.FOV_Circle = true
+    if FOV_Circle then FOV_Circle.Visible = true end
     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
         LocalPlayer.Character.Humanoid.WalkSpeed = 16
         LocalPlayer.Character.Humanoid.JumpPower = 50
     end
     for _, v in pairs(workspace:GetDescendants()) do
         if v:IsA("Highlight") and v.Name == "TVVHO_ESP" then v:Destroy() end
+    end
+    for _, v in pairs(Main:GetChildren()) do
+        if v:IsA("TextButton") then
+            local check = v:FindFirstChildWhichIsA("Frame")
+            if check then
+                local name = v.Text:match("(.+)%s")
+                if name and Flags[name] then
+                    check.BackgroundColor3 = (Flags[name] and Color3.fromRGB(0, 255, 0)) or Color3.fromRGB(255, 0, 0)
+                end
+            end
+        end
     end
 end)
 
@@ -194,11 +261,11 @@ end)
 -- УПРАВЛЕНИЕ МЕНЮ
 ToggleBtn.MouseButton1Click:Connect(function()
     Main.Visible = not Main.Visible
-    Blur.Visible = Main.Visible -- Затемнение фона при открытии
+    Blur.Visible = Main.Visible
 end)
 
--- Silent Aim
-RunService:BindToRenderStep("Aim", Enum.RenderPriority.Camera.Value, function()
+-- Silent Aim (HEARTBEAT)
+RunService.Heartbeat:Connect(function()
     if Flags.SilentAim then
         if UserInputService:IsKeyDown(Enum.KeyCode_L) then
             local Target = nil
@@ -210,7 +277,7 @@ RunService:BindToRenderStep("Aim", Enum.RenderPriority.Camera.Value, function()
                     if Vis then
                         local MouseVec = Vector2.new(Mouse.X, Mouse.Y)
                         local Dist = (MouseVec - Vector2.new(Vec.X, Vec.Y)).Magnitude
-                        if Dist < 150 and Dist < Shortest then
+                        if Dist < FOV_Settings.Radius and Dist < Shortest then
                             local rayParams = RaycastParams.new()
                             rayParams.FilterDescendantsInstances = {LocalPlayer.Character, v.Character}
                             rayParams.FilterType = Enum.RaycastFilterType.Exclude
@@ -230,4 +297,12 @@ RunService:BindToRenderStep("Aim", Enum.RenderPriority.Camera.Value, function()
     end
 end)
 
-print("Aether Glass Loaded. [M] for Menu | [L] for Aim")
+-- Обновление позиции круга (чтобы он был всегда по центру)
+RunService:BindToRenderStep("UpdateFOV", Enum.RenderPriority.Camera.Value - 1, function()
+    if FOV_Circle and Flags.FOV_Circle then
+        FOV_Circle.Position = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+        FOV_Circle.Radius = FOV_Settings.Radius
+    end
+end)
+
+print("Aether Glass v3.0 Loaded. [M] for Menu | [L] for Aim")
