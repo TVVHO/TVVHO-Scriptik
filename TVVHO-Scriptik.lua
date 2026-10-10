@@ -9,6 +9,7 @@ wait(0.5)
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
 local LocalPlayer = Players.LocalPlayer
 
 -- Состояния
@@ -22,6 +23,22 @@ local Flags = {
 local ScreenGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
 ScreenGui.Name = "TVVHO_WORKING"
 ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+-- ФОН (Эффект стекла)
+local Blur = Instance.new("Frame", ScreenGui)
+Blur.BackgroundTransparency = 0.9
+Blur.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+Blur.Size = UDim2.new(1, 0, 1, 0)
+Blur.Position = UDim2.new(0, 0, 0, 0)
+Blur.Visible = false
+local BlurCorner = Instance.new("UICorner", Blur)
+BlurCorner.CornerRadius = UDim.new(0, 12)
+local BlurShadow = Instance.new("UIStroke", Blur)
+BlurShadow.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+BlurShadow.Color = Color3.fromRGB(60, 0, 120)
+BlurShadow.Thickness = 2
+BlurShadow.Transparency = 0.5
 
 local Main = Instance.new("Frame", ScreenGui)
 Main.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
@@ -30,15 +47,20 @@ Main.Size = UDim2.new(0, 220, 0, 320)
 Main.Active = true
 Main.Draggable = true
 Main.Visible = false
-
--- Крутые закругленные углы (UICorner)
 local MainCorner = Instance.new("UICorner", Main)
 MainCorner.CornerRadius = UDim.new(0, 12)
+
+-- Тень окна (UIStroke)
+local MainShadow = Instance.new("UIStroke", Main)
+MainShadow.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+MainShadow.Color = Color3.fromRGB(60, 0, 120)
+MainShadow.Thickness = 2
+MainShadow.Transparency = 0.6
 
 local Title = Instance.new("TextLabel", Main)
 Title.BackgroundColor3 = Color3.fromRGB(60, 0, 120)
 Title.Size = UDim2.new(1, 0, 0, 35)
-Title.Text = "TVVHO | PRO"
+Title.Text = "Aether Hub"
 Title.Font = Enum.Font.GothamBold
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.TextSize = 18
@@ -53,11 +75,15 @@ ToggleBtn.TextSize = 24
 ToggleBtn.AutoButtonColor = false
 local ToggleCorner = Instance.new("UICorner", ToggleBtn)
 ToggleCorner.CornerRadius = UDim.new(0, 8)
+local ToggleShadow = Instance.new("UIStroke", ToggleBtn)
+ToggleShadow.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+ToggleShadow.Color = Color3.fromRGB(100, 0, 200)
+ToggleShadow.Thickness = 2
 
 local List = Instance.new("UIListLayout", Main)
-List.Padding = UDim.new(0, 5)
+List.Padding = UDim.new(0, 8)
 
--- Функция кнопок
+-- Функция кнопок (С эффектами!)
 local function Btn(text, func)
     local button = Instance.new("TextButton", Main)
     button.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
@@ -67,11 +93,33 @@ local function Btn(text, func)
     button.Font = Enum.Font.Gotham
     button.TextColor3 = Color3.fromRGB(220, 220, 255)
     button.TextSize = 14
+    button.AutoButtonColor = false
     local BtnCorner = Instance.new("UICorner", button)
-    BtnCorner.CornerRadius = UDim.new(0, 6)
-    button.MouseButton1Click:Connect(func)
+    BtnCorner.CornerRadius = UDim.new(0, 8)
+    local BtnShadow = Instance.new("UIStroke", button)
+    BtnShadow.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    BtnShadow.Color = Color3.fromRGB(60, 0, 120)
+    BtnShadow.Thickness = 1
+    BtnShadow.Transparency = 0.7
+
+    -- ЭФФЕКТЫ НАВЕДЕНИЯ (Tween)
+    button.MouseEnter:Connect(function()
+        TweenService:Create(button, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(50, 50, 65)}):Play()
+        TweenService:Create(button, TweenInfo.new(0.15), {Size = UDim2.new(0.92, 0, 0, 37)}):Play()
+    end)
+    button.MouseLeave:Connect(function()
+        TweenService:Create(button, TweenInfo.new(0.15), {BackgroundColor3 = Color3.fromRGB(40, 40, 50)}):Play()
+        TweenService:Create(button, TweenInfo.new(0.15), {Size = UDim2.new(0.9, 0, 0, 35)}):Play()
+    end)
+    button.MouseButton1Click:Connect(function()
+        TweenService:Create(button, TweenInfo.new(0.05), {Size = UDim2.new(0.88, 0, 0, 33)}):Play()
+        wait(0.05)
+        TweenService:Create(button, TweenInfo.new(0.05), {Size = UDim2.new(0.9, 0, 0, 35)}):Play()
+        func()
+    end)
+    
     List:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-        Main.Size = UDim2.new(0, 220, 0, 45 + List.AbsoluteContentSize.Y + 10)
+        Main.Size = UDim2.new(0, 220, 0, 45 + List.AbsoluteContentSize.Y + 15)
     end)
 end
 
@@ -112,7 +160,6 @@ y = y + 45
 
 Btn("Silent Aim: ON", function()
     Flags.SilentAim = not Flags.SilentAim
-    -- Текст кнопки не обновляем, чтобы не усложнять код, просто меняем логику
 end)
 y = y + 45
 
@@ -139,15 +186,21 @@ Close.TextSize = 16
 Close.AutoButtonColor = false
 local CloseCorner = Instance.new("UICorner", Close)
 CloseCorner.CornerRadius = UDim.new(0, 4)
-Close.MouseButton1Click:Connect(function() Main.Visible = false end)
+Close.MouseButton1Click:Connect(function() 
+    Blur.Visible = false
+    Main.Visible = false 
+end)
 
 -- УПРАВЛЕНИЕ МЕНЮ
-ToggleBtn.MouseButton1Click:Connect(function() Main.Visible = not Main.Visible end)
+ToggleBtn.MouseButton1Click:Connect(function()
+    Main.Visible = not Main.Visible
+    Blur.Visible = Main.Visible -- Затемнение фона при открытии
+end)
 
--- Silent Aim (САМАЯ ВАЖНАЯ ЧАСТЬ)
+-- Silent Aim
 RunService:BindToRenderStep("Aim", Enum.RenderPriority.Camera.Value, function()
     if Flags.SilentAim then
-        if UserInputService:IsKeyDown(Enum.KeyCode_L) then -- Зажми L для аима
+        if UserInputService:IsKeyDown(Enum.KeyCode_L) then
             local Target = nil
             local Shortest = math.huge
             for _, v in pairs(Players:GetPlayers()) do
@@ -177,4 +230,4 @@ RunService:BindToRenderStep("Aim", Enum.RenderPriority.Camera.Value, function()
     end
 end)
 
-print("TVVHO WORKING Loaded. [M] for Menu | [L] for Aim")
+print("Aether Glass Loaded. [M] for Menu | [L] for Aim")
