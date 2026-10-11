@@ -17,8 +17,7 @@ local Flags = {
     ESP = false, ESP_Tracers = false, 
     Hitbox = false, 
     TriggerBot = false, 
-    Speed = false, Jump = false, Gravity = false, NoClip = false,
-    MagicBullet = false -- НОВЫЙ ФЛАГ
+    Speed = false, Jump = false, Gravity = false, NoClip = false
 }
 
 -- Настройки
@@ -58,7 +57,7 @@ ToggleBtn.Name = "ToggleBtn"
 ToggleBtn.Parent = ScreenGui
 ToggleBtn.Position = UDim2.new(0, 15, 0.15, 0)
 ToggleBtn.Size = UDim2.new(0, 50, 0, 50)
-ToggleBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(220, 20, 60)
 ToggleBtn.Text = "天"
 ToggleBtn.Font = Enum.Font.GothamBold
 ToggleBtn.TextColor3 = Color3.fromRGB(255, 215, 0)
@@ -141,10 +140,6 @@ ToggleBtn.MouseButton1Click:Connect(function()
     Main.Visible = not Main.Visible
 end)
 
--- ==========================================
--- ВКЛАДКИ И ФУНКЦИИ
--- ==========================================
-
 -- ВКЛАДКА: 战斗 (COMBAT)
 local CombatPage = Instance.new("ScrollingFrame")
 CombatPage.Parent = PagesFolder
@@ -152,15 +147,12 @@ CombatPage.Size = UDim2.new(1, 0, 1, 0)
 CombatPage.BackgroundTransparency = 1
 CombatPage.AutomaticCanvasSize = Enum.AutomaticSize.Y
 
-AddButton(CombatPage, "Silent Aim: " .. (Flags.SilentAim and "ON" or "OFF"), function() Flags.SilentAim = not Flags.SilentAim; if FOV_Circle then FOV_Circle.Visible = Flags.SilentAim end end)
-AddButton(CombatPage, "ESP: " .. (Flags.ESP and "ON" or "OFF"), function() Flags.ESP = not Flags.ESP end)
-AddButton(CombatPage, "Hitbox: " .. (Flags.Hitbox and "ON" or "OFF"), function() Flags.Hitbox = not Flags.Hitbox end)
-AddButton(CombatPage, "TriggerBot: " .. (Flags.TriggerBot and "ON" or "OFF"), function() Flags.TriggerBot = not Flags.TriggerBot end)
+AddButton(CombatPage, "锁定 (Aim)", function() Flags.SilentAim = not Flags.SilentAim; if FOV_Circle then FOV_Circle.Visible = Flags.SilentAim end end)
+AddButton(CombatPage, "透视 (ESP)", function() Flags.ESP = not Flags.ESP end)
+AddButton(CombatPage, "红圈 (Hitbox)", function() Flags.Hitbox = not Flags.Hitbox end)
+AddButton(CombatPage, "开枪 (Trigger)", function() Flags.TriggerBot = not Flags.TriggerBot end)
 
--- НОВАЯ КНОПКА: Magic Bullet
-AddButton(CombatPage, "Magic Bullet: " .. (Flags.MagicBullet and "ON" or "OFF"), function() Flags.MagicBullet = not Flags.MagicBullet end)
-
--- НОВАЯ КНОПКА: Телепорт
+-- НОВАЯ КНОПКА: ТЕЛЕПОРТ
 AddButton(CombatPage, "Телепорт (Кликни)", function()
     local Mouse = LocalPlayer:GetMouse()
     Mouse.Button1Down:Connect(function()
@@ -171,8 +163,8 @@ AddButton(CombatPage, "Телепорт (Кликни)", function()
     end)
 end)
 
-AddButton(CombatPage, "Speed (50)", function() if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then LocalPlayer.Character.Humanoid.WalkSpeed = 50 end end)
-AddButton(CombatPage, "Jump (50)", function() if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then LocalPlayer.Character.Humanoid.JumpPower = 50 end end)
+AddButton(CombatPage, "Speed", function() if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then LocalPlayer.Character.Humanoid.WalkSpeed = 50 end end)
+AddButton(CombatPage, "Jump", function() if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then LocalPlayer.Character.Humanoid.JumpPower = 50 end end)
 AddButton(CombatPage, "Gravity", function() Flags.Gravity = not Flags.Gravity; workspace.Gravity = Flags.Gravity and 100 or 196.2 end)
 AddButton(CombatPage, "NoClip", function() Flags.NoClip = not Flags.NoClip end)
 
@@ -260,40 +252,6 @@ if Flags.TriggerBot then
                     wait(0.05)
                     VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
                 end
-            end
-        end
-    end)
-end)
-
--- Magic Bullet (НОВАЯ ФУНКЦИЯ)
-if Flags.MagicBullet then
-    UserInputService.InputBegan:Connect(function(input, gameProcessed)
-        if gameProcessed then return end
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            local Target = nil
-            local Shortest = math.huge
-            for _, v in pairs(Players:GetPlayers()) do
-                if v ~= LocalPlayer and v.Character and v.Character:FindFirstChild("Head") then
-                    local Head = v.Character.Head
-                    local Vec, Vis = Camera:WorldToViewportPoint(Head.Position)
-                    if Vis then
-                        local MouseVec = Vector2.new(Mouse.X, Mouse.Y)
-                        local Dist = (MouseVec - Vector2.new(Vec.X, Vec.Y)).Magnitude
-                        if Dist < 500 and Dist < Shortest then
-                            local rayParams = RaycastParams.new()
-                            rayParams.FilterDescendantsInstances = {LocalPlayer.Character, v.Character}
-                            rayParams.FilterType = Enum.RaycastFilterType.Exclude
-                            local rayResult = workspace:Raycast(Camera.CFrame.Position, (Head.Position - Camera.CFrame.Position).Unit * 1000, rayParams)
-                            if not rayResult or rayResult.Instance:IsDescendantOf(v.Character) then
-                                Shortest = Dist
-                                Target = v
-                            end
-                        end
-                    end
-                end
-            end
-            if Target and Target.Character:FindFirstChild("Head") then
-                Camera.CFrame = CFrame.new(Camera.CFrame.Position, Target.Character.Head.Position)
             end
         end
     end)
