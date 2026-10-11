@@ -383,5 +383,3 @@ if FOV_Circle and Flags.FOV_Circle then
 end
 
 print("TVVHO Dynasty Loaded. [Dragon Button]")
-
-Как можно улучшить?
