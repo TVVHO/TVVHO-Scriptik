@@ -1,5 +1,10 @@
--- Сброс
-pcall(function() if game:GetService("CoreGui"):FindFirstChild("TVVHO_Dynasty") then game:GetService("CoreGui")["TVVHO_Dynasty"]:Destroy() end end)
+
+-- Сброс старых данных
+pcall(function()
+    if game:GetService("CoreGui"):FindFirstChild("TVVHO_Imperial") then
+        game:GetService("CoreGui")["TVVHO_Imperial"]:Destroy()
+    end
+end)
 wait(0.5)
 
 -- Сервисы
@@ -12,7 +17,7 @@ local LocalPlayer = Players.LocalPlayer
 local Mouse = LocalPlayer:GetMouse()
 local Camera = workspace.CurrentCamera
 
--- Состояния
+-- Состояния (Флаги)
 local Flags = {
     ["SilentAim"] = true,
     ["AimPart"] = "Head",
@@ -24,7 +29,8 @@ local Flags = {
     ["Speed"] = false,
     ["Jump"] = false,
     ["Gravity"] = false,
-    ["NoClip"] = false
+    ["NoClip"] = false,
+    ["WallbangAim"] = false -- Новый флаг для стрельбы сквозь стены
 }
 
 -- Настройки
@@ -34,31 +40,41 @@ local Aim_Settings = {Radius = 150}
 local DrawingLib
 pcall(function() DrawingLib = loadstring(game:HttpGet("https://kiriot22.com/releases/drawing-lib.lua"))() end)
 
--- FOV Circle
+-- FOV Circle (Круг для аима)
 local FOV_Circle
 if DrawingLib then
-    FOV_Circle = DrawingLib:Create('Circle', {Visible = Flags["FOV_Circle"], Color = Color3.fromRGB(255, 215, 0), Transparency = 0.6, Thickness = 2, NumSides = 100, Radius = Aim_Settings.Radius, Filled = false, Position = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)})
+    FOV_Circle = DrawingLib:Create('Circle', {
+        Visible = Flags["FOV_Circle"], 
+        Color = Color3.fromRGB(255, 215, 0), -- Золото
+        Transparency = 0.4, 
+        Thickness = 4, -- Сделали толще
+        NumSides = 100, 
+        Radius = Aim_Settings.Radius, 
+        Filled = false, 
+        Position = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+    })
 end
 
 -- ==========================================
--- МЕНЮ TVVHO: DYNASTY EDITION
+-- 1. МЕНЮ TVVHO IMPERIAL (Китайский стиль)
 -- ==========================================
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "TVVHO_Dynasty"
+ScreenGui.Name = "TVVHO_Imperial"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = game:GetService("CoreGui")
 
--- Кнопка открытия (Красная с золотом)
+-- Кнопка вызова
 local ToggleBtn = Instance.new("TextButton")
 local ToggleCorner = Instance.new("UICorner")
 ToggleBtn.Name = "ToggleBtn"
 ToggleBtn.Parent = ScreenGui
 ToggleBtn.Position = UDim2.new(0, 15, 0.15, 0)
 ToggleBtn.Size = UDim2.new(0, 50, 0, 50)
-ToggleBtn.BackgroundColor3 = Color3.fromRGB(220, 20, 60) -- Китайский Красный
-ToggleBtn.Text = "🐉" -- Иконка Дракона
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0) -- Глубокий красный
+ToggleBtn.Text = "天" -- Иероглиф "Небо/Сила"
+ToggleBtn.Font = Enum.Font.GothamBold
 ToggleBtn.TextColor3 = Color3.fromRGB(255, 215, 0) -- Золотой
-ToggleBtn.TextSize = 24
+ToggleBtn.TextSize = 26
 ToggleCorner.CornerRadius = UDim.new(0, 12)
 ToggleCorner.Parent = ToggleBtn
 
@@ -75,7 +91,7 @@ Main.Name = "Main"
 Main.Parent = ScreenGui
 Main.Position = UDim2.new(0.5, -175, 0.5, -125)
 Main.Size = UDim2.new(0, 350, 0, 250)
-Main.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
+Main.BackgroundColor3 = Color3.fromRGB(10, 10, 15) -- Почти черный, глубокий
 Main.ClipsDescendants = true
 Main.Active = true
 Main.Draggable = true
@@ -93,9 +109,9 @@ Title.Name = "Title"
 Title.Parent = TopBar
 Title.Position = UDim2.new(0, 12, 0, 0)
 Title.Size = UDim2.new(1, -12, 1, 0)
-Title.Text = "TVVHO Dynasty"
-Title.TextColor3 = Color3.fromRGB(255, 215, 0) -- Золотой текст
-Title.TextSize = 16
+Title.Text = "天王 TVVHO" -- "Небесный Король TVVHO"
+Title.TextColor3 = Color3.fromRGB(255, 215, 0) -- Золото
+Title.TextSize = 18
 Title.Font = Enum.Font.GothamBold
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
@@ -115,7 +131,7 @@ PagesFolder.Position = UDim2.new(0, 8, 0, 75)
 PagesFolder.Size = UDim2.new(1, -16, 1, -83)
 PagesFolder.BackgroundTransparency = 1
 
--- Функции создания элементов (остались прежними)
+-- Функция создания вкладок
 local pages = {}
 local function CreateTab(tabName)
     local TabBtn = Instance.new("TextButton")
@@ -161,7 +177,7 @@ local function CreateTab(tabName)
             end
         end
         Page.Visible = true
-        TabBtn.BackgroundColor3 = Color3.fromRGB(220, 20, 60) -- Красный активный таб
+        TabBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0) -- Красный активный
         TabBtn.TextColor3 = Color3.fromRGB(255, 215, 0) -- Золотой текст
     end)
 
@@ -169,6 +185,7 @@ local function CreateTab(tabName)
     return Page
 end
 
+-- Функция создания кнопок
 local function AddButton(page, text, callback)
     local Btn = Instance.new("TextButton")
     local BtnCorner = Instance.new("UICorner")
@@ -206,52 +223,114 @@ local function AddToggle(page, text, defaultState, callback)
     Indicator.Parent = Toggle
     Indicator.Position = UDim2.new(1, -30, 0.5, -9)
     Indicator.Size = UDim2.new(0, 18, 0, 18)
-    Indicator.BackgroundColor3 = state and Color3.fromRGB(220, 20, 60) or Color3.fromRGB(45, 45, 60)
+    Indicator.BackgroundColor3 = state and Color3.fromRGB(180, 0, 0) or Color3.fromRGB(45, 45, 60)
     IndicatorCorner.CornerRadius = UDim.new(0, 5)
     IndicatorCorner.Parent = Indicator
     Toggle.MouseButton1Click:Connect(function()
         state = not state
-        Indicator.BackgroundColor3 = state and Color3.fromRGB(220, 20, 60) or Color3.fromRGB(45, 45, 60)
+        Indicator.BackgroundColor3 = state and Color3.fromRGB(180, 0, 0) or Color3.fromRGB(45, 45, 60)
         pcall(callback, state)
     end)
 end
 
 -- ==========================================
--- ИНИЦИАЛИЗАЦИЯ (С новыми иконками)
+-- 2. ИНИЦИАЛИЗАЦИЯ ВКЛАДОК (Китайские названия)
 -- ==========================================
-local CombatPage = CreateTab("Combat") -- ⚔️
-local WorldPage = CreateTab("World") -- 🌏
-local SettingsPage = CreateTab("Settings") -- 🛠️
+local CombatPage = CreateTab("战斗") -- Битва
+local WorldPage = CreateTab("世界")   -- Мир
+local SettingsPage = CreateTab("设定") -- Настройки
 
 CombatPage.Visible = true
-TabContainer:FindFirstChild("CombatTab").BackgroundColor3 = Color3.fromRGB(220, 20, 60)
-TabContainer:FindFirstChild("CombatTab").TextColor3 = Color3.fromRGB(255, 215, 0)
+TabContainer:FindFirstChild("战斗Tab").BackgroundColor3 = Color3.fromRGB(180, 0, 0)
+TabContainer:FindFirstChild("战斗Tab").TextColor3 = Color3.fromRGB(255, 215, 0)
 
+-- Открытие меню
 ToggleBtn.MouseButton1Click:Connect(function()
     Main.Visible = not Main.Visible
 end)
 
--- 1. COMBAT (⚔️)
-AddToggle(CombatPage, "Silent Aim", Flags.SilentAim, function(val) Flags.SilentAim = val end)
-AddToggle(CombatPage, "ESP", Flags.ESP, function(val) Flags.ESP = val end)
-AddToggle(CombatPage, "ESP Tracers", Flags.ESP_Tracers, function(val) Flags.ESP_Tracers = val end)
-AddToggle(CombatPage, "Hitbox", Flags.Hitbox, function(val) Flags.Hitbox = val end)
-AddToggle(CombatPage, "TriggerBot", Flags.TriggerBot, function(val) Flags.TriggerBot = val end)
-AddToggle(CombatPage, "NoClip", Flags.NoClip, function(val) Flags.NoClip = val end)
-AddButton(CombatPage, "Aim Part (Head/Body)", function() Flags.AimPart = (Flags.AimPart == "Head" and "Body") or "Head" end)
+-- ==========================================
+-- 3. СОДЕРЖИМОЕ ВКЛАДОК (Функции)
+-- ==========================================
 
--- 2. WORLD (🌏)
-AddToggle(WorldPage, "Speed", Flags.Speed, function(val) Flags.Speed = val end)
-AddToggle(WorldPage, "Jump", Flags.Jump, function(val) Flags.Jump = val end)
-AddToggle(WorldPage, "Gravity", Flags.Gravity, function(val) Flags.Gravity = val end)
-AddToggle(WorldPage, "FOV Circle", Flags.FOV_Circle, function(val) Flags.FOV_Circle = val; if FOV_Circle then FOV_Circle.Visible = val end end)
+-- ВКЛАДКА: 战斗 (COMBAT)
+AddToggle(CombatPage, "锁定 (Aim)", Flags.SilentAim, function(val) Flags.SilentAim = val end)
+AddToggle(CombatPage, "透视 (ESP)", Flags.ESP, function(val) Flags.ESP = val end)
+AddToggle(CombatPage, "线条 (Tracers)", Flags.ESP_Tracers, function(val) Flags.ESP_Tracers = val end)
+AddToggle(CombatPage, "红圈 (Hitbox)", Flags.Hitbox, function(val) Flags.Hitbox = val end)
+AddToggle(CombatPage, "开枪 (Trigger)", Flags.TriggerBot, function(val) Flags.TriggerBot = val end)
+AddToggle(CombatPage, "穿墙 (NoClip)", Flags.NoClip, function(val) Flags.NoClip = val end)
+AddButton(CombatPage, "切换部位", function() Flags.AimPart = (Flags.AimPart == "Head" and "Body") or "Head" end)
 
--- 3. SETTINGS
-AddButton(SettingsPage, "Unload UI", function() ScreenGui:Destroy() end)
+-- НОВЫЕ ФУНКЦИИ:
+-- Телепорт по клику
+AddButton(CombatPage, "Телепорт (Кликни)", function()
+    local Mouse = LocalPlayer:GetMouse()
+    Mouse.Button1Down:Connect(function()
+        local TargetPos = Mouse.Hit.p
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            LocalPlayer.Character:SetPrimaryPartCFrame(CFrame.new(TargetPos + Vector3.new(0, 5, 0)))
+        end
+    end)
+end)
+
+-- Wallbang Aim (Наведение сквозь стену)
+AddToggle(CombatPage, "Wallbang Aim", false, function(val)
+    Flags.WallbangAim = val
+    if val then
+        spawn(function()
+            while Flags.WallbangAim do
+                local Target = nil
+                local ShortestDist = math.huge
+                local Camera = workspace.CurrentCamera
+                
+                for _, v in pairs(Players:GetPlayers()) do
+                    if v ~= LocalPlayer and v.Character and v.Character:FindFirstChild("Head") then
+                        local Part = v.Character.Head
+                        local Vec, Vis = Camera:WorldToViewportPoint(Part.Position)
+                        if Vis then
+                            local Params = RaycastParams.new()
+                            Params.FilterDescendantsInstances = {LocalPlayer.Character, workspace.Players}
+                            Params.FilterType = Enum.RaycastFilterType.Exclude
+                            Params.IgnoreWater = true
+                            
+                            local RayDir = (Part.Position - Camera.CFrame.Position).Unit * 1000
+                            local Result = workspace:Raycast(Camera.CFrame.Position, RayDir, Params)
+                            
+                            if not Result or Result.Instance:IsDescendantOf(v.Character) then
+                                local MouseVec = Vector2.new(Mouse.X, Mouse.Y)
+                                local Dist = (MouseVec - Vector2.new(Vec.X, Vec.Y)).Magnitude
+                                if Dist < 500 and Dist < ShortestDist then
+                                    ShortestDist = Dist
+                                    Target = v
+                                end
+                            end
+                        end
+                    end
+                end
+                
+                if Target and Target.Character:FindFirstChild("Head") then
+                    Camera.CFrame = CFrame.new(Camera.CFrame.Position, Target.Character.Head.Position)
+                end
+                wait()
+            end
+        end)
+    end
+end)
+
+-- ВКЛАДКА: 世界 (WORLD)
+AddToggle(WorldPage, "加速", Flags.Speed, function(val) Flags.Speed = val end)
+AddToggle(WorldPage, "跳跃", Flags.Jump, function(val) Flags.Jump = val end)
+AddToggle(WorldPage, "重力", Flags.Gravity, function(val) Flags.Gravity = val end)
+AddToggle(WorldPage, "FOV 圈", Flags.FOV_Circle, function(val) Flags.FOV_Circle = val; if FOV_Circle then FOV_Circle.Visible = val end end)
+
+-- ВКЛАДКА: 设定 (SETTINGS)
+AddButton(SettingsPage, "卸载 (Unload)", function() ScreenGui:Destroy() end)
 
 -- ==========================================
--- ЛОГИКА ЧИТОВ (Без изменений)
+-- 4. ЛОГИКА ЧИТОВ (Циклы)
 -- ==========================================
+
 -- Silent Aim
 RunService.Heartbeat:Connect(function()
     if Flags.SilentAim then
@@ -271,14 +350,14 @@ RunService.Heartbeat:Connect(function()
                             local rayResult = workspace:Raycast(Camera.CFrame.Position, (Part.Position - Camera.CFrame.Position).Unit * 1000, rayParams)
                             if not rayResult or rayResult.Instance:IsDescendantOf(v.Character) then
                                 Shortest = Dist
-                                Target = Part
+                                Target = v
                             end
                         end
                     end
                 end
             end
         end
-        if Target then Camera.CFrame = CFrame.new(Camera.CFrame.Position, Target.Position) end
+        if Target then Camera.CFrame = CFrame.new(Camera.CFrame.Position, Target.Character[Flags.AimPart].Position) end
     end
 end)
 
@@ -298,7 +377,7 @@ if Flags.TriggerBot then
             end
         end
     end)
-end
+end)
 
 -- NoClip
 if Flags.NoClip then
@@ -309,7 +388,7 @@ if Flags.NoClip then
             end
         end
     end)
-end
+end)
 
 -- Hitbox
 if Flags.Hitbox then
@@ -329,7 +408,7 @@ if Flags.Hitbox then
             w.Part1 = v.Character.HumanoidRootPart
         end
     end
-end
+end)
 
 -- Speed/Jump/Gravity
 if Flags.Speed and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then LocalPlayer.Character.Humanoid.WalkSpeed = 100 end
@@ -352,7 +431,7 @@ if Flags.ESP then
             end
         end
     end)
-end
+end)
 
 -- ESP Tracers
 if Flags.ESP_Tracers and DrawingLib then
@@ -373,13 +452,13 @@ if Flags.ESP_Tracers and DrawingLib then
             end
         end
     end)
-end
+end)
 
 -- FOV Circle
 if FOV_Circle and Flags.FOV_Circle then
     RunService:BindToRenderStep("UpdateFOV", Enum.RenderPriority.Camera.Value - 1, function()
         FOV_Circle.Position = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
     end)
-end
+end)
 
-print("TVVHO Dynasty Loaded. [Dragon Button]")
+print("天王 TVVHO Imperial Loaded. [Кнопка '天' в углу]")
