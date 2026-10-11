@@ -1,5 +1,5 @@
 -- Сброс
-pcall(function() if game:GetService("CoreGui"):FindFirstChild("TVVHO_LITE") then game:GetService("CoreGui")["TVVHO_LITE"]:Destroy() end end)
+pcall(function() if game:GetService("CoreGui"):FindFirstChild("TVVHO_Imperial") then game:GetService("CoreGui")["TVVHO_Imperial"]:Destroy() end end)
 wait(0.5)
 
 local Players = game:GetService("Players")
@@ -11,88 +11,104 @@ local Mouse = LocalPlayer:GetMouse()
 local Camera = workspace.CurrentCamera
 
 -- Флаги
-local Flags = {SilentAim=true, AimPart="Head", ESP=false, Hitbox=false, TriggerBot=false, Speed=false, Jump=false, Gravity=false, NoClip=false}
+local Flags = {SilentAim=true, AimPart="Head", ESP=false, Hitbox=false, TriggerBot=false, Speed=false, Jump=false, Gravity=false, NoClip=false, MagicBullet=false}
 
 -- Настройки
 local Aim_Settings = {Radius = 150}
 
--- БИБЛИОТЕКА РИСОВАНИЯ (DrawingLib)
+-- Библиотека рисования
 local DrawingLib
 pcall(function() DrawingLib = loadstring(game:HttpGet("https://kiriot22.com/releases/drawing-lib.lua"))() end)
 
--- FOV Circle (Круг)
+-- FOV Circle
 local FOV_Circle
 if DrawingLib then
-    FOV_Circle = DrawingLib:Create('Circle', {
-        Visible = Flags["SilentAim"], 
-        Color = Color3.fromRGB(255, 0, 0), 
-        Transparency = 0.5, 
-        Thickness = 3, 
-        NumSides = 100, 
-        Radius = Aim_Settings.Radius, 
-        Filled = false, 
-        Position = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
-    })
+    FOV_Circle = DrawingLib:Create('Circle', {Visible = Flags["SilentAim"], Color = Color3.fromRGB(255, 215, 0), Transparency = 0.4, Thickness = 4, NumSides = 100, Radius = Aim_Settings.Radius, Filled = false, Position = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)})
 end
 
 -- ==========================================
--- МЕНЮ (САМЫЙ ПРОСТОЙ ВАРИАНТ)
+-- МЕНЮ (Китайский стиль)
 -- ==========================================
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "TVVHO_LITE"
+ScreenGui.Name = "TVVHO_Imperial"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = game:GetService("CoreGui")
 
--- Кнопка открытия (маленький квадрат)
+-- Кнопка открытия
 local ToggleBtn = Instance.new("TextButton")
-ToggleBtn.Name = "Toggle"
+local ToggleCorner = Instance.new("UICorner")
+ToggleBtn.Name = "ToggleBtn"
 ToggleBtn.Parent = ScreenGui
-ToggleBtn.Position = UDim2.new(0, 10, 0, 10)
-ToggleBtn.Size = UDim2.new(0, 40, 0, 40)
-ToggleBtn.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-ToggleBtn.Text = "M"
-ToggleBtn.Font = Enum.Font.SourceSansBold
-ToggleBtn.TextSize = 24
-ToggleBtn.AutoButtonColor = false
-ToggleBtn.ZIndex = 10
+ToggleBtn.Position = UDim2.new(0, 15, 0.15, 0)
+ToggleBtn.Size = UDim2.new(0, 50, 0, 50)
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
+ToggleBtn.Text = "天"
+ToggleBtn.Font = Enum.Font.GothamBold
+ToggleBtn.TextColor3 = Color3.fromRGB(255, 215, 0)
+ToggleBtn.TextSize = 26
+ToggleCorner.CornerRadius = UDim.new(0, 12)
+ToggleCorner.Parent = ToggleBtn
 
--- Главное окно (Рамка)
+-- Главное окно
 local Main = Instance.new("Frame")
+local MainCorner = Instance.new("UICorner")
+local TopBar = Instance.new("Frame")
+local Title = Instance.new("TextLabel")
+local TabContainer = Instance.new("Frame")
+local TabListLayout = Instance.new("UIListLayout")
+local PagesFolder = Instance.new("Frame")
+
 Main.Name = "Main"
 Main.Parent = ScreenGui
-Main.Position = UDim2.new(0.5, -150, 0.5, -100)
-Main.Size = UDim2.new(0, 300, 0, 200)
-Main.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+Main.Position = UDim2.new(0.5, -175, 0.5, -125)
+Main.Size = UDim2.new(0, 350, 0, 250)
+Main.BackgroundColor3 = Color3.fromRGB(10, 10, 15)
 Main.BorderSizePixel = 0
 Main.Active = true
 Main.Draggable = true
 Main.Visible = false
 
--- Заголовок
-local Title = Instance.new("TextLabel")
-Title.Parent = Main
+MainCorner.CornerRadius = UDim.new(0, 14)
+MainCorner.Parent = Main
+
+TopBar.Name = "TopBar"
+TopBar.Parent = Main
+TopBar.Size = UDim2.new(1, 0, 0, 35)
+TopBar.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+
+Title.Name = "Title"
+Title.Parent = TopBar
 Title.Size = UDim2.new(1, 0, 0, 30)
 Title.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-Title.Text = "TVVHO LITE"
+Title.Text = "天王 TVVHO"
 Title.Font = Enum.Font.GothamBold
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.TextSize = 16
+Title.TextColor3 = Color3.fromRGB(255, 215, 0)
+Title.TextSize = 18
+Title.TextXAlignment = Enum.TextXAlignment.Left
 
--- Контейнер для кнопок
-local Page = Instance.new("ScrollingFrame")
-Page.Parent = Main
-Page.Position = UDim2.new(0, 0, 0, 35)
-Page.Size = UDim2.new(1, 0, 1, -35)
-Page.BackgroundTransparency = 1
-Page.CanvasSize = UDim2.new(0, 0, 0, 0)
-Page.AutomaticCanvasSize = Enum.AutomaticSize.Y
+TabContainer.Name = "TabContainer"
+TabContainer.Parent = Main
+TabContainer.Position = UDim2.new(0, 8, 0, 40)
+TabContainer.Size = UDim2.new(1, -16, 0, 30)
+TabContainer.BackgroundTransparency = 1
+TabListLayout.Parent = TabContainer
+TabListLayout.FillDirection = Enum.FillDirection.Horizontal
+TabListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+TabListLayout.Padding = UDim.new(0, 6)
 
--- Функция создания кнопок (Простая)
+PagesFolder.Name = "PagesFolder"
+PagesFolder.Parent = Main
+PagesFolder.Position = UDim2.new(0, 0, 0, 75)
+PagesFolder.Size = UDim2.new(1, -16, 1, -83)
+PagesFolder.BackgroundTransparency = 1
+PagesFolder.AutomaticCanvasSize = Enum.AutomaticSize.Y
+
+-- Функция кнопок
 local function AddButton(text, callback)
     local Btn = Instance.new("TextButton")
-    Btn.Parent = Page
+    Btn.Parent = PagesFolder
     Btn.Size = UDim2.new(1, -10, 0, 30)
-    Btn.Position = UDim2.new(0, 5, 0, (#Page:GetChildren() - 1) * 35)
+    Btn.Position = UDim2.new(0, 5, 0, (#PagesFolder:GetChildren() - 1) * 35)
     Btn.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
     Btn.Text = text
     Btn.Font = Enum.Font.Gotham
@@ -100,32 +116,26 @@ local function AddButton(text, callback)
     Btn.TextSize = 13
     Btn.AutoButtonColor = false
     Btn.MouseButton1Click:Connect(callback)
-    
-    -- Обновляем размер скролла
-    Page.CanvasSize = UDim2.new(0, 0, 0, (#Page:GetChildren() - 1) * 35 + 10)
+    PagesFolder.CanvasSize = UDim2.new(0, 0, 0, (#PagesFolder:GetChildren() - 1) * 35 + 10)
 end
 
--- Кнопка открытия меню
+-- Открытие меню
 ToggleBtn.MouseButton1Click:Connect(function()
     Main.Visible = not Main.Visible
 end)
 
--- ==========================================
--- КНОПКИ ФУНКЦИЙ
--- ==========================================
-AddButton("Silent Aim: " .. (Flags.SilentAim and "ON" or "OFF"), function()
-    Flags.SilentAim = not Flags.SilentAim
-    if FOV_Circle then FOV_Circle.Visible = Flags.SilentAim end
-    -- Обновляем текст кнопки (сложно, пропустим для простоты)
-end)
+-- ВКЛАДКА: 战斗 (COMBAT)
+local CombatPage = Instance.new("ScrollingFrame")
+CombatPage.Parent = PagesFolder
+CombatPage.Size = UDim2.new(1, 0, 1, 0)
+CombatPage.BackgroundTransparency = 1
+CombatPage.AutomaticCanvasSize = Enum.AutomaticSize.Y
 
+AddButton("Silent Aim: " .. (Flags.SilentAim and "ON" or "OFF"), function() Flags.SilentAim = not Flags.SilentAim; if FOV_Circle then FOV_Circle.Visible = Flags.SilentAim end end)
 AddButton("ESP: " .. (Flags.ESP and "ON" or "OFF"), function() Flags.ESP = not Flags.ESP end)
 AddButton("Hitbox: " .. (Flags.Hitbox and "ON" or "OFF"), function() Flags.Hitbox = not Flags.Hitbox end)
 AddButton("TriggerBot: " .. (Flags.TriggerBot and "ON" or "OFF"), function() Flags.TriggerBot = not Flags.TriggerBot end)
-AddButton("Speed (50)", function() if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then LocalPlayer.Character.Humanoid.WalkSpeed = 50 end end)
-AddButton("Jump (50)", function() if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then LocalPlayer.Character.Humanoid.JumpPower = 50 end end)
-AddButton("Gravity", function() Flags.Gravity = not Flags.Gravity; workspace.Gravity = Flags.Gravity and 100 or 196.2 end)
-AddButton("NoClip", function() Flags.NoClip = not Flags.NoClip end)
+AddButton("Magic Bullet: " .. (Flags.MagicBullet and "ON" or "OFF"), function() Flags.MagicBullet = not Flags.MagicBullet end) -- НОВАЯ КНОПКА
 AddButton("Телепорт (Кликни)", function()
     local Mouse = LocalPlayer:GetMouse()
     Mouse.Button1Down:Connect(function()
@@ -135,6 +145,49 @@ AddButton("Телепорт (Кликни)", function()
         end
     end)
 end)
+AddButton("Speed (50)", function() if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then LocalPlayer.Character.Humanoid.WalkSpeed = 50 end end)
+AddButton("Jump (50)", function() if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then LocalPlayer.Character.Humanoid.JumpPower = 50 end end)
+AddButton("Gravity", function() Flags.Gravity = not Flags.Gravity; workspace.Gravity = Flags.Gravity and 100 or 196.2 end)
+AddButton("NoClip", function() Flags.NoClip = not Flags.NoClip end)
+
+-- ВКЛАДКА: 世界 (WORLD)
+local WorldPage = Instance.new("ScrollingFrame")
+WorldPage.Parent = PagesFolder
+WorldPage.Size = UDim2.new(1, 0, 1, 0)
+WorldPage.BackgroundTransparency = 1
+WorldPage.AutomaticCanvasSize = Enum.AutomaticSize.Y
+WorldPage.Visible = false
+
+-- ВКЛАДКА: 设定 (SETTINGS)
+local SettingsPage = Instance.new("ScrollingFrame")
+SettingsPage.Parent = PagesFolder
+SettingsPage.Size = UDim2.new(1, 0, 1, 0)
+SettingsPage.BackgroundTransparency = 1
+SettingsPage.AutomaticCanvasSize = Enum.AutomaticSize.Y
+SettingsPage.Visible = false
+
+-- Переключение вкладок (добавим кнопки сверху)
+local function CreateTabBtn(name, page)
+    local Btn = Instance.new("TextButton")
+    Btn.Parent = TabContainer
+    Btn.Size = UDim2.new(0.33, 0, 1, 0)
+    Btn.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
+    Btn.Text = name
+    Btn.Font = Enum.Font.Gotham
+    Btn.TextColor3 = Color3.fromRGB(180, 180, 200)
+    Btn.TextSize = 12
+    Btn.AutoButtonColor = false
+    Btn.MouseButton1Click:Connect(function()
+        for _, p in pairs(PagesFolder:GetChildren()) do p.Visible = false end
+        page.Visible = true
+    end)
+    return Btn
+end
+
+local CombatTab = CreateTabBtn("战斗", CombatPage)
+local WorldTab = CreateTabBtn("世界", WorldPage)
+local SettingsTab = CreateTabBtn("设定", SettingsPage)
+CombatTab.BackgroundColor3 = Color3.fromRGB(180, 0, 0) -- Активная вкладка
 
 -- ==========================================
 -- ЛОГИКА ЧИТОВ
@@ -181,6 +234,40 @@ if Flags.TriggerBot then
                     wait(0.05)
                     VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 0)
                 end
+            end
+        end
+    end)
+end)
+
+-- Magic Bullet (НОВАЯ ФУНКЦИЯ)
+if Flags.MagicBullet then
+    UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if gameProcessed then return end
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            local Target = nil
+            local Shortest = math.huge
+            for _, v in pairs(Players:GetPlayers()) do
+                if v ~= LocalPlayer and v.Character and v.Character:FindFirstChild("Head") then
+                    local Head = v.Character.Head
+                    local Vec, Vis = Camera:WorldToViewportPoint(Head.Position)
+                    if Vis then
+                        local MouseVec = Vector2.new(Mouse.X, Mouse.Y)
+                        local Dist = (MouseVec - Vector2.new(Vec.X, Vec.Y)).Magnitude
+                        if Dist < 500 and Dist < Shortest then
+                            local rayParams = RaycastParams.new()
+                            rayParams.FilterDescendantsInstances = {LocalPlayer.Character, v.Character}
+                            rayParams.FilterType = Enum.RaycastFilterType.Exclude
+                            local rayResult = workspace:Raycast(Camera.CFrame.Position, (Head.Position - Camera.CFrame.Position).Unit * 1000, rayParams)
+                            if not rayResult or rayResult.Instance:IsDescendantOf(v.Character) then
+                                Shortest = Dist
+                                Target = v
+                            end
+                        end
+                    end
+                end
+            end
+            if Target and Target.Character:FindFirstChild("Head") then
+                Camera.CFrame = CFrame.new(Camera.CFrame.Position, Target.Character.Head.Position)
             end
         end
     end)
@@ -242,4 +329,4 @@ if Flags.ESP then
     end)
 end)
 
-print("TVVHO LITE Loaded. [Кнопка 'M' в углу]")
+print("天王 TVVHO Imperial Loaded. [Кнопка '天' в углу]")
