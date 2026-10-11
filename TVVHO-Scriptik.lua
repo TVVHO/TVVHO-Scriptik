@@ -1,7 +1,8 @@
 -- Сброс
-pcall(function() if game:GetService("CoreGui"):FindFirstChild("TVVHO_Imperial") then game:GetService("CoreGui")["TVVHO_Imperial"]:Destroy() end end)
+pcall(function() if game:GetService("CoreGui"):FindFirstChild("TVVHO_Dynasty") then game:GetService("CoreGui")["TVVHO_Dynasty"]:Destroy() end end)
 wait(0.5)
 
+-- Сервисы
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
@@ -11,7 +12,14 @@ local Mouse = LocalPlayer:GetMouse()
 local Camera = workspace.CurrentCamera
 
 -- Флаги
-local Flags = {SilentAim=true, AimPart="Head", ESP=false, Hitbox=false, TriggerBot=false, Speed=false, Jump=false, Gravity=false, NoClip=false, MagicBullet=false}
+local Flags = {
+    SilentAim = true, AimPart = "Head", 
+    ESP = false, ESP_Tracers = false, 
+    Hitbox = false, 
+    TriggerBot = false, 
+    Speed = false, Jump = false, Gravity = false, NoClip = false,
+    MagicBullet = false -- НОВЫЙ ФЛАГ
+}
 
 -- Настройки
 local Aim_Settings = {Radius = 150}
@@ -23,14 +31,23 @@ pcall(function() DrawingLib = loadstring(game:HttpGet("https://kiriot22.com/rele
 -- FOV Circle
 local FOV_Circle
 if DrawingLib then
-    FOV_Circle = DrawingLib:Create('Circle', {Visible = Flags["SilentAim"], Color = Color3.fromRGB(255, 215, 0), Transparency = 0.4, Thickness = 4, NumSides = 100, Radius = Aim_Settings.Radius, Filled = false, Position = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)})
+    FOV_Circle = DrawingLib:Create('Circle', {
+        Visible = Flags["SilentAim"], 
+        Color = Color3.fromRGB(255, 215, 0), 
+        Transparency = 0.4, 
+        Thickness = 4, 
+        NumSides = 100, 
+        Radius = Aim_Settings.Radius, 
+        Filled = false, 
+        Position = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+    })
 end
 
 -- ==========================================
--- МЕНЮ (Китайский стиль)
+-- МЕНЮ (Dynasty Style)
 -- ==========================================
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "TVVHO_Imperial"
+ScreenGui.Name = "TVVHO_Dynasty"
 ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = game:GetService("CoreGui")
 
@@ -103,12 +120,12 @@ PagesFolder.Size = UDim2.new(1, -16, 1, -83)
 PagesFolder.BackgroundTransparency = 1
 PagesFolder.AutomaticCanvasSize = Enum.AutomaticSize.Y
 
--- Функция кнопок
-local function AddButton(text, callback)
+-- Функция создания кнопок
+local function AddButton(page, text, callback)
     local Btn = Instance.new("TextButton")
-    Btn.Parent = PagesFolder
+    Btn.Parent = page
     Btn.Size = UDim2.new(1, -10, 0, 30)
-    Btn.Position = UDim2.new(0, 5, 0, (#PagesFolder:GetChildren() - 1) * 35)
+    Btn.Position = UDim2.new(0, 5, 0, (#page:GetChildren() - 1) * 35)
     Btn.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
     Btn.Text = text
     Btn.Font = Enum.Font.Gotham
@@ -116,13 +133,17 @@ local function AddButton(text, callback)
     Btn.TextSize = 13
     Btn.AutoButtonColor = false
     Btn.MouseButton1Click:Connect(callback)
-    PagesFolder.CanvasSize = UDim2.new(0, 0, 0, (#PagesFolder:GetChildren() - 1) * 35 + 10)
+    PagesFolder.CanvasSize = UDim2.new(0, 0, 0, (#page:GetChildren() - 1) * 35 + 10)
 end
 
 -- Открытие меню
 ToggleBtn.MouseButton1Click:Connect(function()
     Main.Visible = not Main.Visible
 end)
+
+-- ==========================================
+-- ВКЛАДКИ И ФУНКЦИИ
+-- ==========================================
 
 -- ВКЛАДКА: 战斗 (COMBAT)
 local CombatPage = Instance.new("ScrollingFrame")
@@ -131,12 +152,16 @@ CombatPage.Size = UDim2.new(1, 0, 1, 0)
 CombatPage.BackgroundTransparency = 1
 CombatPage.AutomaticCanvasSize = Enum.AutomaticSize.Y
 
-AddButton("Silent Aim: " .. (Flags.SilentAim and "ON" or "OFF"), function() Flags.SilentAim = not Flags.SilentAim; if FOV_Circle then FOV_Circle.Visible = Flags.SilentAim end end)
-AddButton("ESP: " .. (Flags.ESP and "ON" or "OFF"), function() Flags.ESP = not Flags.ESP end)
-AddButton("Hitbox: " .. (Flags.Hitbox and "ON" or "OFF"), function() Flags.Hitbox = not Flags.Hitbox end)
-AddButton("TriggerBot: " .. (Flags.TriggerBot and "ON" or "OFF"), function() Flags.TriggerBot = not Flags.TriggerBot end)
-AddButton("Magic Bullet: " .. (Flags.MagicBullet and "ON" or "OFF"), function() Flags.MagicBullet = not Flags.MagicBullet end) -- НОВАЯ КНОПКА
-AddButton("Телепорт (Кликни)", function()
+AddButton(CombatPage, "Silent Aim: " .. (Flags.SilentAim and "ON" or "OFF"), function() Flags.SilentAim = not Flags.SilentAim; if FOV_Circle then FOV_Circle.Visible = Flags.SilentAim end end)
+AddButton(CombatPage, "ESP: " .. (Flags.ESP and "ON" or "OFF"), function() Flags.ESP = not Flags.ESP end)
+AddButton(CombatPage, "Hitbox: " .. (Flags.Hitbox and "ON" or "OFF"), function() Flags.Hitbox = not Flags.Hitbox end)
+AddButton(CombatPage, "TriggerBot: " .. (Flags.TriggerBot and "ON" or "OFF"), function() Flags.TriggerBot = not Flags.TriggerBot end)
+
+-- НОВАЯ КНОПКА: Magic Bullet
+AddButton(CombatPage, "Magic Bullet: " .. (Flags.MagicBullet and "ON" or "OFF"), function() Flags.MagicBullet = not Flags.MagicBullet end)
+
+-- НОВАЯ КНОПКА: Телепорт
+AddButton(CombatPage, "Телепорт (Кликни)", function()
     local Mouse = LocalPlayer:GetMouse()
     Mouse.Button1Down:Connect(function()
         local TargetPos = Mouse.Hit.p
@@ -145,10 +170,11 @@ AddButton("Телепорт (Кликни)", function()
         end
     end)
 end)
-AddButton("Speed (50)", function() if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then LocalPlayer.Character.Humanoid.WalkSpeed = 50 end end)
-AddButton("Jump (50)", function() if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then LocalPlayer.Character.Humanoid.JumpPower = 50 end end)
-AddButton("Gravity", function() Flags.Gravity = not Flags.Gravity; workspace.Gravity = Flags.Gravity and 100 or 196.2 end)
-AddButton("NoClip", function() Flags.NoClip = not Flags.NoClip end)
+
+AddButton(CombatPage, "Speed (50)", function() if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then LocalPlayer.Character.Humanoid.WalkSpeed = 50 end end)
+AddButton(CombatPage, "Jump (50)", function() if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then LocalPlayer.Character.Humanoid.JumpPower = 50 end end)
+AddButton(CombatPage, "Gravity", function() Flags.Gravity = not Flags.Gravity; workspace.Gravity = Flags.Gravity and 100 or 196.2 end)
+AddButton(CombatPage, "NoClip", function() Flags.NoClip = not Flags.NoClip end)
 
 -- ВКЛАДКА: 世界 (WORLD)
 local WorldPage = Instance.new("ScrollingFrame")
@@ -166,7 +192,7 @@ SettingsPage.BackgroundTransparency = 1
 SettingsPage.AutomaticCanvasSize = Enum.AutomaticSize.Y
 SettingsPage.Visible = false
 
--- Переключение вкладок (добавим кнопки сверху)
+-- Переключение вкладок
 local function CreateTabBtn(name, page)
     local Btn = Instance.new("TextButton")
     Btn.Parent = TabContainer
@@ -187,7 +213,7 @@ end
 local CombatTab = CreateTabBtn("战斗", CombatPage)
 local WorldTab = CreateTabBtn("世界", WorldPage)
 local SettingsTab = CreateTabBtn("设定", SettingsPage)
-CombatTab.BackgroundColor3 = Color3.fromRGB(180, 0, 0) -- Активная вкладка
+CombatTab.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
 
 -- ==========================================
 -- ЛОГИКА ЧИТОВ
@@ -329,4 +355,4 @@ if Flags.ESP then
     end)
 end)
 
-print("天王 TVVHO Imperial Loaded. [Кнопка '天' в углу]")
+print("天王 TVVHO Dynasty Loaded. [Кнопка '天' в углу]")
